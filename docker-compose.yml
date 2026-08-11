@@ -1,0 +1,18 @@
+services:
+  portfolio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portfolio-site
+    restart: unless-stopped
+    ports:
+      - "30080:80"  # 호스트:컨테이너 포트 (보안을 위해 30080 사용)
+    volumes:
+      # 필요시 로그 볼륨 마운트
+      - ./logs:/var/log/nginx
+    networks:
+      - portfolio-network
+
+networks:
+  portfolio-network:
+    driver: bridge

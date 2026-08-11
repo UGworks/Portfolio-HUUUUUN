@@ -1,0 +1,9 @@
+# Query: 참여자자
+# ContextLines: 1
+
+1 result - 1 file
+
+src\components\ContactPage.tsx:
+  145                <section className="mb-8">
+  146:                 <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">참여자 프로필</h2>
+  147                  <p className="text-[14.5px] text-gray-700 leading-[1.75]">
