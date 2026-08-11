@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { info } from '../data';
 
 interface HeaderProps {
-  onSectionChange?: (section: 'works' | 'about' | 'contact' | 'studyPlan') => void;
+  onSectionChange?: (section: 'works' | 'about' | 'contact') => void;
   isIntro?: boolean;
   introDelayMs?: number;
 }
@@ -58,17 +58,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
                 onSectionChange?.('contact');
               }}
             >
-              CV
-            </a>
-            <a
-              href="#study-plan"
-              className="text-xs hover:opacity-70 transition-opacity cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                onSectionChange?.('studyPlan');
-              }}
-            >
-              STUDY PLAN
+              ABOUT
             </a>
           </div>
 
@@ -111,18 +101,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
                 onSectionChange?.('contact');
               }}
             >
-              CV
-            </a>
-            <a
-              href="#study-plan"
-              className="block text-xs hover:opacity-70 transition-opacity cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsMenuOpen(false);
-                onSectionChange?.('studyPlan');
-              }}
-            >
-              STUDY PLAN
+              ABOUT
             </a>
           </motion.div>
         )}

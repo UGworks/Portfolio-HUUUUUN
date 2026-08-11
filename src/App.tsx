@@ -5,17 +5,15 @@ import PortfolioLayout from './components/PortfolioLayout';
 import GeneralInfoPanel from './components/GeneralInfoPanel';
 import AboutPage from './components/AboutPage';
 import ContactPage from './components/ContactPage';
-import StudyPlanPage from './components/StudyPlanPage';
 import { projects } from './data';
 import { Project } from './types';
 import { getSchoolCopy } from './schoolCopy';
 
-type AppSection = 'works' | 'about' | 'contact' | 'studyPlan';
+type AppSection = 'works' | 'about' | 'contact';
 
 const getInitialSection = (): AppSection => {
   const hash = window.location.hash.replace('#', '');
   if (hash === 'contact') return 'contact';
-  if (hash === 'study-plan') return 'studyPlan';
   if (hash === 'about') return 'about';
   return 'works';
 };
@@ -37,8 +35,7 @@ function App() {
 
   const handleSectionChange = (section: AppSection) => {
     setActiveSection(section);
-    const hash = section === 'studyPlan' ? 'study-plan' : section;
-    window.history.replaceState(null, '', `#${hash}`);
+    window.history.replaceState(null, '', `#${section}`);
   };
 
   // 섹션 전환 시 스크롤 맨 위로 (모바일에서 Contact 등 눌렀을 때 중간에서 시작하는 문제 방지)
@@ -118,7 +115,6 @@ function App() {
       )}
       {activeSection === 'about' && <AboutPage />}
       {activeSection === 'contact' && <ContactPage />}
-      {activeSection === 'studyPlan' && <StudyPlanPage />}
     </div>
   );
 }

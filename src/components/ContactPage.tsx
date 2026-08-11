@@ -4,7 +4,7 @@ import seonghunImage from '../IMG/seonghun.jpg';
 
 const ContactPage = () => {
   const phone = '010-3890-7954';
-  const email = 'huuuuun@kakao.com';
+  const email = 'huuuuun.88@gmail.com';
   const portfolioUrl = info.socials?.website;
   const experience = [
     {
@@ -13,8 +13,8 @@ const ContactPage = () => {
       period: '2025.03 – 현재',
       items: [
         '글로벌 IR 콘텐츠의 시각 시스템 설계 및 통합 운영',
-        '데이터 기반 시각 구조 표준화 및 제작 프로세스 최적화',
-        '투자자 대상 커뮤니케이션 영상 구조 재설계',
+        '데이터·브랜드 내러티브를 영상 언어로 전환하는 제작 파이프라인 운영',
+        '생성형 AI를 후반 공정에 연결하기 위한 실무 워크플로우 탐색',
       ],
     },
     {
@@ -52,9 +52,9 @@ const ContactPage = () => {
       role: '2D 테크니컬 디렉터',
       period: '2015.09 – 2019.11',
       items: [
-        '포스트 프로덕션 단계 2D 시각 효과 및 합성 솔루션 제공',
-        'TVCF, 뮤직비디오, 공익광고 등 영상 프로젝트 테크니컬 디렉팅',
-        '클라이언트 요구사항 기반 촬영 현장 감독 및 포스트 파이프라인 설계',
+        'TVCF·뮤직비디오·공익광고 등 광고 영상 후반의 2D 합성·이펙트 디렉팅',
+        '클라이언트 요구 기반 촬영 현장 감독 및 포스트 파이프라인 설계',
+        '상업 영상 납품 기준에 맞춘 품질·일정 관리',
       ],
     },
     {
@@ -275,21 +275,22 @@ const ContactPage = () => {
               <section className="contact-print-block mb-8">
                 <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">지원자 프로필</h2>
                 <p className="text-[14.5px] text-gray-700 leading-[1.75]">
-                  13년간 포스트프로덕션과 글로벌 IR 콘텐츠 현장에서 활동하며, 현재 사모펀드(PEF) 운용사 리브라텀 파트너스에서 크리에이티브 디렉터로 재직하고 있습니다.
-                  기업 커뮤니케이션의 최전선에서 금융 정보가 여전히 텍스트와 발표자 중심 구조에 머무는 한계를 체감해왔으며,
-                  방대한 데이터를 직관적인 시각 언어로 전환하는 정보 미학적 접근을 바탕으로 데이터 기반 영상 자동화 파이프라인과 인터랙티브 IR 시스템을 연구하고자 합니다.
+                  13년간 TVCF·브랜드 콘텐츠·미디어파사드·글로벌 IR 영상 현장에서 2D TD와 크리에이티브 디렉터로 일해 온 현업 크리에이터입니다.
+                  현재 사모펀드(PEF) 운용사 리브라텀 파트너스에서 크리에이티브 디렉터로 재직하며, 광고·금융·공간 미디어를 아우르는 제작 파이프라인을 운영하고 있습니다.
+                  기존 후반 제작 역량에 생성형 AI(이미지·영상·오디오)를 결합해, 현업에서 바로 쓰는 AI 디렉팅 파이프라인을 고도화하고자
+                  SOYLAB X The Class Track B(AI 디렉터 퀀텀점프)에 지원합니다.
                 </p>
               </section>
 
-              {/* ── RESEARCH INTERESTS ── */}
+              {/* ── APPLICATION FOCUS ── */}
               <section className="contact-print-block mb-8">
-                <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">연구 관심 분야</h2>
+                <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">지원 목표 · 실무 적용</h2>
                 <ul className="list-disc pl-5 space-y-1 text-[14.5px] text-gray-700">
-                  <li>파이낸스 데이터와 기업 내러티브를 시각 언어로 변환하는 정보 미학 연구</li>
-                  <li>AI 기반 영상 제작 파이프라인 자동화 및 금융 데이터 매핑 설계</li>
-                  <li>투자 의사결정 지원을 위한 인터랙티브 데이터 시각화 시스템</li>
-                  <li>발표자 의존도를 낮춘 데이터 중심 IR 스트리밍 모델 구축</li>
-                  <li>공간 기반 미디어 시스템으로 확장 가능한 하이엔드 금융 커뮤니케이션 연구</li>
+                  <li>광고·IR·공간 미디어 실무에 바로 붙는 AI 이미지·영상 제작 파이프라인 구축</li>
+                  <li>Midjourney · Comfy Cloud · 시네마틱 영상 · FX를 연결한 디렉팅 워크플로우 정립</li>
+                  <li>반복 공정을 줄이는 AI 기반 자동화로 제작 속도와 퀄리티 일관성 확보</li>
+                  <li>브랜드·금융 커뮤니케이션에 맞는 스토리보드–생성–후반 통합 프로세스 설계</li>
+                  <li>부트캠프 결과물을 현업 포트폴리오·실무 시연으로 바로 적용</li>
                 </ul>
               </section>
 
@@ -312,25 +313,6 @@ const ContactPage = () => {
                 ))}
               </section>
 
-              {/* ── EDUCATION ── */}
-              <section className="contact-print-block mb-8">
-                <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">학력</h2>
-                <ul className="space-y-5">
-                  {[
-                    { school: '숭실대학교 글로벌미래교육원 (학점은행제) / 시각디자인학 학사', date: '2026. 02', gpa: '3.91' },
-                    { school: '한국폴리텍5대학 / 멀티미디어학과', date: '2009. 02', gpa: '3.95' },
-                  ].map(({ school, date, gpa }, i) => (
-                    <li key={i} className="block border-b border-gray-100 pb-5 last:border-0 last:pb-0 last:mb-0">
-                      <div className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 items-baseline">
-                        <span className="font-semibold text-gray-900">{school}</span>
-                        <span className="text-sm text-gray-600 font-normal flex-shrink-0 whitespace-nowrap">{date}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 font-normal mt-1">평점평균: {gpa} / 4.5</p>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-
               {/* ── CERTIFICATIONS & TECHNICAL SKILLS ── */}
               <section className="contact-print-block">
                 <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">자격증 및 기술</h2>
@@ -344,12 +326,12 @@ const ContactPage = () => {
                   </ul>
                   <strong className="text-gray-900">영상 후반 작업</strong>
                   <span>After Effects, DaVinci{'\u00A0'}Resolve, Flame, Premiere{'\u00A0'}Pro</span>
-                  <strong className="text-gray-900">3D·생성형</strong>
-                  <span>Blender, ComfyUI, TouchDesigner</span>
+                  <strong className="text-gray-900">3D·생성형 AI</strong>
+                  <span>Blender, Midjourney, ComfyUI / Comfy Cloud, TouchDesigner</span>
                   <strong className="text-gray-900">라이브 스트리밍</strong>
                   <span>vMix, Tricaster, OBS를 통한 라이브 송출 경험</span>
                   <strong className="text-gray-900">AI 파이프라인</strong>
-                  <span>AI 기반 영상 디자인 파이프라인 개발</span>
+                  <span>이미지·영상 생성형 AI를 후반 제작과 연결한 실무 파이프라인 설계</span>
                   <strong className="text-gray-900">Vibe Coding</strong>
                   <span>Cursor, Claude Code를 통한 웹 및 다양한 HTML 디자인 포맷 제작</span>
                 </div>

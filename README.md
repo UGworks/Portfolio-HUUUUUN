@@ -1,6 +1,8 @@
 # Portfolio Site
 
-대학원용 포폴사이트
+[SOYLAB X The Class](https://soylab.ai/2026_the_class) Track B (AI 디렉터 퀀텀점프) 지원용 포트폴리오
+
+경로 예시: `/soylab` — Track B 배너 카피 표시
 
 ## 로컬 프리뷰
 
