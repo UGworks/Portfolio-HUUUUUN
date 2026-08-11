@@ -188,7 +188,9 @@ const ContactPage = () => {
           <div className="space-y-6 text-sm font-light leading-relaxed">
             <div>
               <p className="font-normal mb-2">전화</p>
-              <p className="text-gray-700">{phone}</p>
+              <a href={`tel:${phone.replace(/-/g, '')}`} className="text-gray-700 no-underline hover:opacity-70 transition-opacity">
+                {phone}
+              </a>
             </div>
             <div>
               <p className="font-normal mb-2">이메일</p>
@@ -240,13 +242,24 @@ const ContactPage = () => {
                   <p className="text-base md:text-lg text-gray-600 mb-5">Creative Director / Media Artist</p>
                   <div className="grid grid-cols-[72px_1fr] gap-x-4 gap-y-2 text-left text-sm md:text-[14.5px] leading-relaxed max-w-md">
                     <span className="font-semibold text-gray-900">전화</span>
-                    <span className="text-gray-700">{phone}</span>
+                    <a href={`tel:${phone.replace(/-/g, '')}`} className="text-gray-700 no-underline">
+                      {phone}
+                    </a>
                     <span className="font-semibold text-gray-900">이메일</span>
-                    <span className="text-gray-700">{email}</span>
+                    <a href={`mailto:${email}`} className="text-gray-700 no-underline">
+                      {email}
+                    </a>
                     {portfolioUrl && (
                       <>
                         <span className="font-semibold text-gray-900">포트폴리오</span>
-                        <span className="text-gray-700">TVCF-SITE</span>
+                        <a
+                          href={portfolioUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-700 no-underline break-all"
+                        >
+                          {portfolioUrl}
+                        </a>
                       </>
                     )}
                   </div>
