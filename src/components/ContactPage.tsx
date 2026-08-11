@@ -300,7 +300,7 @@ const ContactPage = () => {
                 <h2 className="text-lg font-bold border-b border-gray-300 pb-1 mb-4 uppercase tracking-wide">지원 목표 · 실무 적용</h2>
                 <ul className="list-disc pl-5 space-y-1 text-[14.5px] text-gray-700">
                   <li>광고·IR·공간 미디어 실무에 바로 붙는 AI 이미지·영상 제작 파이프라인 구축</li>
-                  <li>Midjourney · Comfy Cloud · 시네마틱 영상 · FX를 연결한 디렉팅 워크플로우 정립</li>
+                  <li>Midjourney · ComfyUI · 시네마틱 영상 · FX를 연결한 디렉팅 워크플로우 정립</li>
                   <li>반복 공정을 줄이는 AI 기반 자동화로 제작 속도와 퀄리티 일관성 확보</li>
                   <li>브랜드·금융 커뮤니케이션에 맞는 스토리보드–생성–후반 통합 프로세스 설계</li>
                   <li>부트캠프 결과물을 현업 포트폴리오·실무 시연으로 바로 적용</li>
@@ -340,7 +340,7 @@ const ContactPage = () => {
                   <strong className="text-gray-900">영상 후반 작업</strong>
                   <span>After Effects, DaVinci{'\u00A0'}Resolve, Flame, Premiere{'\u00A0'}Pro</span>
                   <strong className="text-gray-900">3D·생성형 AI</strong>
-                  <span>Blender, Midjourney, ComfyUI / Comfy Cloud, TouchDesigner</span>
+                  <span>Blender, Midjourney, ComfyUI, TouchDesigner</span>
                   <strong className="text-gray-900">라이브 스트리밍</strong>
                   <span>vMix, Tricaster, OBS를 통한 라이브 송출 경험</span>
                   <strong className="text-gray-900">AI 파이프라인</strong>
