@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { info } from '../data';
 import seonghunImage from '../IMG/seonghun.jpg';
+import { trackOutboundClick, trackResumePdfSave } from '../analytics';
 
 const ContactPage = () => {
   const phone = '010-3890-7954';
@@ -79,6 +80,7 @@ const ContactPage = () => {
     },
   ];
   const handleDownloadPdf = () => {
+    trackResumePdfSave();
     window.print();
   };
 
@@ -188,26 +190,46 @@ const ContactPage = () => {
           <div className="space-y-6 text-sm font-light leading-relaxed">
             <div>
               <p className="font-normal mb-2">전화</p>
-              <a href={`tel:${phone.replace(/-/g, '')}`} className="text-gray-700 no-underline hover:opacity-70 transition-opacity">
+              <a
+                href={`tel:${phone.replace(/-/g, '')}`}
+                className="text-gray-700 no-underline hover:opacity-70 transition-opacity"
+                onClick={() => trackOutboundClick('phone', `tel:${phone.replace(/-/g, '')}`)}
+              >
                 {phone}
               </a>
             </div>
             <div>
               <p className="font-normal mb-2">이메일</p>
-              <a href={`mailto:${email}`} className="text-base no-underline hover:opacity-70 transition-opacity">
+              <a
+                href={`mailto:${email}`}
+                className="text-base no-underline hover:opacity-70 transition-opacity"
+                onClick={() => trackOutboundClick('email', `mailto:${email}`)}
+              >
                 {email}
               </a>
             </div>
             {(info.socials?.linkedin || portfolioUrl) && (
               <div className="flex gap-2 text-sm">
                 {info.socials?.linkedin && (
-                  <a href={info.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-700 no-underline hover:opacity-70 transition-opacity">
+                  <a
+                    href={info.socials.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-700 no-underline hover:opacity-70 transition-opacity"
+                    onClick={() => trackOutboundClick('linkedin', info.socials!.linkedin!)}
+                  >
                     LinkedIn
                   </a>
                 )}
                 {info.socials?.linkedin && portfolioUrl && <span className="text-gray-400">|</span>}
                 {portfolioUrl && (
-                  <a href={portfolioUrl} target="_blank" rel="noopener noreferrer" className="text-gray-700 no-underline hover:opacity-70 transition-opacity">
+                  <a
+                    href={portfolioUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-700 no-underline hover:opacity-70 transition-opacity"
+                    onClick={() => trackOutboundClick('tvcf_site', portfolioUrl)}
+                  >
                     TVCF-Site
                   </a>
                 )}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from './components/Header';
 import PortfolioLayout from './components/PortfolioLayout';
@@ -9,6 +9,11 @@ import LoadingScreen from './components/LoadingScreen';
 import { projects } from './data';
 import { Project } from './types';
 import { getSchoolCopy } from './schoolCopy';
+import {
+  startEngagementHeartbeat,
+  trackProjectView,
+  trackSectionView,
+} from './analytics';
 
 type AppSection = 'works' | 'about' | 'contact';
 
@@ -27,6 +32,7 @@ function App() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeSection, setActiveSection] = useState<AppSection>(getInitialSection);
   const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
+  const projectViewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introHeaderDelayMs = 0;
   const introMaskDelayMs = 0;
   const introMaskDurationMs = 2000;
@@ -44,9 +50,32 @@ function App() {
     window.history.replaceState(null, '', `#${section}`);
   };
 
+  const handleProjectChange = useCallback((project: Project | null) => {
+    setActiveProject(project);
+    if (projectViewTimerRef.current) {
+      clearTimeout(projectViewTimerRef.current);
+      projectViewTimerRef.current = null;
+    }
+    if (!project) return;
+    // 빠르게 넘긴 작품은 제외, 약 0.8초 이상 본 작품만 기록
+    projectViewTimerRef.current = setTimeout(() => {
+      trackProjectView(project);
+    }, 800);
+  }, []);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [activeSection]);
+
+  useEffect(() => {
+    if (!isBootReady) return;
+    trackSectionView(activeSection);
+  }, [isBootReady, activeSection]);
+
+  useEffect(() => {
+    if (!isBootReady) return;
+    return startEngagementHeartbeat(30000);
+  }, [isBootReady]);
 
   useEffect(() => {
     if (!isBootReady) return;
@@ -83,6 +112,12 @@ function App() {
     return () => document.removeEventListener('keydown', preventDevShortcuts);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (projectViewTimerRef.current) clearTimeout(projectViewTimerRef.current);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {showLoader && (
@@ -112,7 +147,7 @@ function App() {
             <>
               <PortfolioLayout
                 projects={projects}
-                onProjectChange={setActiveProject}
+                onProjectChange={handleProjectChange}
                 isIntro={!hasPlayedIntro}
                 introMaskDelayMs={introMaskDelayMs}
                 introMaskDurationMs={introMaskDurationMs}
