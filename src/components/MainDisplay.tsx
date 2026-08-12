@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Project } from '../types';
+import { trackVideoComplete, trackVideoProgress, trackVideoStart } from '../analytics';
 
 interface MainDisplayProps {
   project: Project | null;
@@ -15,6 +16,9 @@ const MainDisplay = ({ project, isVisible, isIntro = false, onVideoEnd }: MainDi
   const [videoOpacity, setVideoOpacity] = useState(1);
   const [shouldFade, setShouldFade] = useState(false);
   const prevProjectIdRef = useRef<string | null>(null);
+  const startedRef = useRef(false);
+  const progressRef = useRef<Set<number>>(new Set());
+  const completedRef = useRef(false);
 
   // 1) 프로젝트/표시 여부가 바뀔 때만 로드·처음 재생 (isWheeling/isIntro 변경 시에는 이 effect 안 탐)
   useEffect(() => {
@@ -23,7 +27,11 @@ const MainDisplay = ({ project, isVisible, isIntro = false, onVideoEnd }: MainDi
       return;
     }
     const video = videoRef.current;
+    const currentProject = project;
     prevProjectIdRef.current = project.id;
+    startedRef.current = false;
+    progressRef.current = new Set();
+    completedRef.current = false;
 
     video.pause();
     video.currentTime = 0;
@@ -37,12 +45,24 @@ const MainDisplay = ({ project, isVisible, isIntro = false, onVideoEnd }: MainDi
         const fadeProgress = (video.duration - video.currentTime) / 0.5;
         setVideoOpacity(Math.max(0, fadeProgress));
       }
+      if (!video.duration || video.duration <= 0) return;
+      const percent = (video.currentTime / video.duration) * 100;
+      ([25, 50, 75] as const).forEach((mark) => {
+        if (percent >= mark && !progressRef.current.has(mark)) {
+          progressRef.current.add(mark);
+          trackVideoProgress(currentProject, mark, video.currentTime);
+        }
+      });
     };
 
     const playFromStart = () => {
       video.currentTime = 0;
       setVideoOpacity(1);
       video.play().catch(() => {});
+      if (!startedRef.current) {
+        startedRef.current = true;
+        trackVideoStart(currentProject, video.duration || undefined);
+      }
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
@@ -109,6 +129,10 @@ const MainDisplay = ({ project, isVisible, isIntro = false, onVideoEnd }: MainDi
               muted
               playsInline
               onEnded={() => {
+                if (!completedRef.current && project) {
+                  completedRef.current = true;
+                  trackVideoComplete(project);
+                }
                 if (onVideoEnd) {
                   setShouldFade(true);
                   setVideoOpacity(0);

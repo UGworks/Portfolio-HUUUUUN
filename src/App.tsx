@@ -10,7 +10,9 @@ import { projects } from './data';
 import { Project } from './types';
 import { getSchoolCopy } from './schoolCopy';
 import {
+  ProjectSelectMethod,
   startEngagementHeartbeat,
+  trackProjectLeave,
   trackProjectView,
   trackSectionView,
 } from './analytics';
@@ -33,6 +35,11 @@ function App() {
   const [activeSection, setActiveSection] = useState<AppSection>(getInitialSection);
   const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
   const projectViewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewingRef = useRef<{
+    project: Project;
+    startedAt: number;
+    method: ProjectSelectMethod;
+  } | null>(null);
   const introHeaderDelayMs = 0;
   const introMaskDelayMs = 0;
   const introMaskDurationMs = 2000;
@@ -50,22 +57,61 @@ function App() {
     window.history.replaceState(null, '', `#${section}`);
   };
 
-  const handleProjectChange = useCallback((project: Project | null) => {
+  const flushProjectLeave = useCallback(() => {
+    const current = viewingRef.current;
+    if (!current) return;
+    const dwellSeconds = Math.round((Date.now() - current.startedAt) / 1000);
+    if (dwellSeconds >= 1) {
+      trackProjectLeave(current.project, dwellSeconds, current.method);
+    }
+    viewingRef.current = null;
+  }, []);
+
+  const handleProjectChange = useCallback((
+    project: Project | null,
+    method: ProjectSelectMethod = 'initial'
+  ) => {
+    flushProjectLeave();
     setActiveProject(project);
     if (projectViewTimerRef.current) {
       clearTimeout(projectViewTimerRef.current);
       projectViewTimerRef.current = null;
     }
     if (!project) return;
-    // 빠르게 넘긴 작품은 제외, 약 0.8초 이상 본 작품만 기록
+    viewingRef.current = { project, startedAt: Date.now(), method };
+    // 빠르게 넘긴 작품은 제외, 약 1초 이상 본 작품만 조회로 기록
     projectViewTimerRef.current = setTimeout(() => {
-      trackProjectView(project);
-    }, 800);
-  }, []);
+      trackProjectView(project, method);
+    }, 1000);
+  }, [flushProjectLeave]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [activeSection]);
+    if (activeSection !== 'works') flushProjectLeave();
+  }, [activeSection, flushProjectLeave]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flushProjectLeave();
+        return;
+      }
+      if (activeProject) {
+        viewingRef.current = {
+          project: activeProject,
+          startedAt: Date.now(),
+          method: viewingRef.current?.method ?? 'initial',
+        };
+      }
+    };
+    const onPageHide = () => flushProjectLeave();
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, [activeProject, flushProjectLeave]);
 
   useEffect(() => {
     if (!isBootReady) return;

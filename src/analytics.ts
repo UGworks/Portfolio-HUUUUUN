@@ -9,9 +9,27 @@ declare global {
 
 const MEASUREMENT_ID = 'G-0GK9DRZDE7';
 
+export type ProjectSelectMethod =
+  | 'click'
+  | 'wheel'
+  | 'swipe'
+  | 'auto'
+  | 'video_end'
+  | 'initial';
+
 function gtag(...args: unknown[]) {
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
   window.gtag(...(args as [GtagCommand, ...unknown[]]));
+}
+
+function projectParams(project: { id: string; title: string; category?: string }) {
+  return {
+    project_id: project.id,
+    project_title: project.title,
+    project_category: project.category ?? '',
+    item_id: project.id,
+    item_name: project.title,
+  };
 }
 
 /** SPA 가상 페이지뷰 (섹션 전환) */
@@ -30,6 +48,14 @@ export function trackEvent(
   gtag('event', eventName, params);
 }
 
+/** 메뉴 클릭 */
+export function trackMenuClick(label: string, section: string) {
+  trackEvent('menu_click', {
+    link_text: label,
+    section,
+  });
+}
+
 /** 메뉴 / 섹션 이동 */
 export function trackSectionView(section: 'works' | 'about' | 'contact') {
   const labels = {
@@ -45,16 +71,59 @@ export function trackSectionView(section: 'works' | 'about' | 'contact') {
   });
 }
 
-/** 포트폴리오 작품 조회 */
-export function trackProjectView(project: {
-  id: string;
-  title: string;
-  category?: string;
-}) {
+/** 작품 조회 (1초 이상 머문 경우) */
+export function trackProjectView(
+  project: { id: string; title: string; category?: string },
+  method: ProjectSelectMethod = 'initial'
+) {
   trackEvent('project_view', {
-    project_id: project.id,
-    project_title: project.title,
-    project_category: project.category ?? '',
+    ...projectParams(project),
+    select_method: method,
+  });
+}
+
+/** 작품에서 떠날 때 — 체류 초 */
+export function trackProjectLeave(
+  project: { id: string; title: string; category?: string },
+  dwellSeconds: number,
+  method: ProjectSelectMethod = 'initial'
+) {
+  trackEvent('project_leave', {
+    ...projectParams(project),
+    dwell_seconds: dwellSeconds,
+    select_method: method,
+  });
+}
+
+export function trackVideoStart(
+  project: { id: string; title: string; category?: string },
+  durationSeconds?: number
+) {
+  trackEvent('video_start', {
+    ...projectParams(project),
+    video_title: project.title,
+    video_provider: 'self_hosted',
+    video_duration: durationSeconds != null ? Math.round(durationSeconds) : undefined,
+  });
+}
+
+export function trackVideoProgress(
+  project: { id: string; title: string; category?: string },
+  percent: 25 | 50 | 75,
+  currentSeconds: number
+) {
+  trackEvent('video_progress', {
+    ...projectParams(project),
+    video_title: project.title,
+    video_percent: percent,
+    video_current_time: Math.round(currentSeconds),
+  });
+}
+
+export function trackVideoComplete(project: { id: string; title: string; category?: string }) {
+  trackEvent('video_complete', {
+    ...projectParams(project),
+    video_title: project.title,
   });
 }
 
@@ -80,15 +149,14 @@ export function trackOutboundClick(label: string, url: string) {
   });
 }
 
-/** 체류시간 하트비트 (분 단위 누적) */
+/** 체류시간 하트비트 (30초 단위) */
 export function startEngagementHeartbeat(intervalMs = 30000) {
-  let minutes = 0;
+  let ticks = 0;
   const tick = () => {
     if (document.visibilityState !== 'visible') return;
-    minutes += 1;
+    ticks += 1;
     trackEvent('engagement_heartbeat', {
-      engaged_minutes: minutes,
-      engaged_seconds: minutes * (intervalMs / 1000),
+      engaged_seconds: ticks * (intervalMs / 1000),
     });
   };
   const id = window.setInterval(tick, intervalMs);

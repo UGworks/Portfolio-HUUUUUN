@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { info } from '../data';
+import { trackMenuClick } from '../analytics';
 
 interface HeaderProps {
   onSectionChange?: (section: 'works' | 'about' | 'contact') => void;
@@ -27,6 +28,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
             style={{ letterSpacing: '0.3em' }}
             onClick={(e) => {
               e.preventDefault();
+              trackMenuClick(info.name, 'works');
               onSectionChange?.('works');
             }}
           >
@@ -45,6 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
               className="text-xs hover:opacity-70 transition-opacity cursor-pointer"
               onClick={(e) => {
                 e.preventDefault();
+                trackMenuClick('PORTFOLIO', 'works');
                 onSectionChange?.('works');
               }}
             >
@@ -55,6 +58,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
               className="text-xs hover:opacity-70 transition-opacity cursor-pointer"
               onClick={(e) => {
                 e.preventDefault();
+                trackMenuClick('ABOUT', 'contact');
                 onSectionChange?.('contact');
               }}
             >
@@ -87,6 +91,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
               onClick={(e) => {
                 e.preventDefault();
                 setIsMenuOpen(false);
+                trackMenuClick('PORTFOLIO', 'works');
                 onSectionChange?.('works');
               }}
             >
@@ -98,6 +103,7 @@ const Header: React.FC<HeaderProps> = ({ onSectionChange, isIntro = false, intro
               onClick={(e) => {
                 e.preventDefault();
                 setIsMenuOpen(false);
+                trackMenuClick('ABOUT', 'contact');
                 onSectionChange?.('contact');
               }}
             >

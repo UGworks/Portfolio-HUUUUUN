@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Project } from '../types';
 import ProjectSidebar from './ProjectSidebar';
 import MainDisplay from './MainDisplay';
+import { ProjectSelectMethod } from '../analytics';
 
 interface PortfolioLayoutProps {
   projects: Project[];
-  onProjectChange?: (project: Project | null) => void;
+  onProjectChange?: (project: Project | null, method?: ProjectSelectMethod) => void;
   isIntro?: boolean;
   introMaskDelayMs?: number;
   introMaskDurationMs?: number;
@@ -88,7 +89,7 @@ const PortfolioLayout = ({
           setActiveIndex(nextIndex);
           
           if (onProjectChangeRef.current) {
-            onProjectChangeRef.current(projects[nextIndex]);
+            onProjectChangeRef.current(projects[nextIndex], 'auto');
           }
           
           syncScrollToIndex(nextIndex);
@@ -128,7 +129,7 @@ const PortfolioLayout = ({
       activeIndexRef.current = newIndex;
       setActiveIndex(newIndex);
       if (onProjectChangeRef.current) {
-        onProjectChangeRef.current(projects[newIndex]);
+        onProjectChangeRef.current(projects[newIndex], 'wheel');
       }
       syncScrollToIndex(newIndex);
     };
@@ -148,7 +149,7 @@ const PortfolioLayout = ({
     activeIndexRef.current = index;
     setActiveIndex(index);
     if (onProjectChangeRef.current) {
-      onProjectChangeRef.current(projects[index]);
+      onProjectChangeRef.current(projects[index], 'click');
     }
     syncScrollToIndex(index);
   };
@@ -159,7 +160,7 @@ const PortfolioLayout = ({
       activeIndexRef.current = nextIndex;
       setActiveIndex(nextIndex);
       if (onProjectChangeRef.current) {
-        onProjectChangeRef.current(projects[nextIndex]);
+        onProjectChangeRef.current(projects[nextIndex], 'video_end');
       }
       syncScrollToIndex(nextIndex);
     }
@@ -226,7 +227,7 @@ const PortfolioLayout = ({
         activeIndexRef.current = newIndex;
         setActiveIndex(newIndex);
         if (onProjectChangeRef.current) {
-          onProjectChangeRef.current(projects[newIndex]);
+          onProjectChangeRef.current(projects[newIndex], 'swipe');
         }
 
         syncScrollToIndex(newIndex);
@@ -257,7 +258,7 @@ const PortfolioLayout = ({
         imageAutoTransitionRef.current = null;
       }
       if (onProjectChange) {
-        onProjectChange(projects[0]);
+        onProjectChange(projects[0], 'initial');
       }
       // 레이아웃 반영 후 스크롤 초기화 (리로드처럼 보이는 현상 방지)
       requestAnimationFrame(() => {
