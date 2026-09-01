@@ -33,3 +33,6 @@ Thumbs.db
 
 # Docker
 certbot/
+
+# Local-only docs (not for public repo)
+HANDOFF.md
