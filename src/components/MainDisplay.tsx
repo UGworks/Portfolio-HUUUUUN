@@ -83,13 +83,14 @@ const MainDisplay = ({
     }
     const video = videoRef.current;
     const currentProject = project;
+    const startAt = currentProject.videoStart ?? 0; // 인점
     prevProjectIdRef.current = project.id;
     startedRef.current = false;
     progressRef.current = new Set();
     completedRef.current = false;
 
     video.pause();
-    video.currentTime = 0;
+    video.currentTime = startAt;
     setVideoOpacity(1);
     setShouldFade(false);
     video.load();
@@ -111,7 +112,7 @@ const MainDisplay = ({
     };
 
     const holdFirstFrame = () => {
-      video.currentTime = 0;
+      video.currentTime = startAt;
       video.pause();
     };
 
@@ -150,8 +151,9 @@ const MainDisplay = ({
 
     const video = videoRef.current;
     const currentProject = project;
+    const startAt = currentProject.videoStart ?? 0; // 인점
 
-    video.currentTime = 0;
+    video.currentTime = startAt;
     setVideoOpacity(1);
     video.play().catch(() => {});
     if (!startedRef.current) {

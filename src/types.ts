@@ -4,6 +4,7 @@ export interface Project {
   category: string;
   image?: string;
   video?: string;
+  videoStart?: number; // 재생 시작 지점(초). 없으면 0
   thumbnail?: string; // 썸네일용 이미지 (비디오 프로젝트용)
   link?: string;
   linkLabel?: string; // 링크 버튼 문구 (기본: 사이트 열기)
