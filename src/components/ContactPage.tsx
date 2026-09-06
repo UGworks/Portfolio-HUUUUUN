@@ -77,7 +77,8 @@ const SITE = {
   libratum: { url: 'https://libratuminvestment.com/', preview: previewLibratum, label: 'Libratum Investment' },
   openexc: { url: 'https://openexc.com/', preview: previewOpenexc, label: 'OpenExchange' },
   concentrix: { url: 'https://kr.concentrix.com/', preview: previewConcentrix, label: 'Concentrix Korea', embed: false },
-  vixen: { url: 'http://www.vixenvfxstudio.com/kr/', preview: previewVixen, label: 'VIXEN VFX Studio' },
+  // http 전용 사이트: https로 배포된 페이지 안에서는 브라우저가 혼합 콘텐츠로 막는다 → 캡처로 대체
+  vixen: { url: 'http://www.vixenvfxstudio.com/kr/', preview: previewVixen, label: 'VIXEN VFX Studio', embed: false },
   sillok: { url: 'https://www.riss.kr/link?id=T13413899', preview: previewSillok, label: '조선왕조실록 인물중심 데이터 시각화 (박진완 지도, 2014)', kicker: '참고 자료' },
   tufte: { url: 'https://www.edwardtufte.com/book/the-visual-display-of-quantitative-information/', preview: previewTufte, label: 'Tufte · The Visual Display of Quantitative Information', kicker: '참고 자료' },
   eyes: { url: 'https://ieeexplore.ieee.org/document/545307', preview: previewEyes, label: 'Shneiderman · The Eyes Have It', kicker: '참고 자료' },
