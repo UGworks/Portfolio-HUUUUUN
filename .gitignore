@@ -36,3 +36,8 @@ certbot/
 
 # Local-only docs (not for public repo)
 HANDOFF.md
+
+# Local agent tooling (not for public repo)
+.agents/
+.claude/
+skills-lock.json

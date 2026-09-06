@@ -120,21 +120,21 @@ const LoadingScreen = ({ projects, onBuffered, onGone }: LoadingScreenProps) => 
           aria-busy="true"
           aria-live="polite"
         >
-          <div className="flex flex-col items-center gap-2 mb-8">
+          <div className="flex flex-col items-center gap-2 mb-8 min-[2560px]:mb-10">
             <p
-              className="text-sm text-black"
+              className="text-sm min-[1920px]:text-base min-[2560px]:text-lg text-black"
               style={{ letterSpacing: '0.35em' }}
             >
               Seonghun.Lee
             </p>
             <p
-              className="text-[10px] text-gray-500 uppercase"
+              className="text-[10px] min-[1920px]:text-xs min-[2560px]:text-sm text-gray-500 uppercase"
               style={{ letterSpacing: '0.28em' }}
             >
               Portfolio
             </p>
           </div>
-          <div className="w-40 h-px bg-gray-200 overflow-hidden">
+          <div className="w-40 min-[2560px]:w-56 h-px bg-gray-200 overflow-hidden">
             <motion.div
               className="h-full bg-black origin-left"
               initial={{ scaleX: 0 }}

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project } from '../types';
 import ProjectSidebar from './ProjectSidebar';
 import MainDisplay from './MainDisplay';
 import { ProjectSelectMethod } from '../analytics';
+import { ease, useMotionPrefs } from '../motion';
 
 interface PortfolioLayoutProps {
   projects: Project[];
@@ -12,6 +13,9 @@ interface PortfolioLayoutProps {
   introMaskDelayMs?: number;
   introMaskDurationMs?: number;
   introSidebarDelayMs?: number;
+  introSidebarDurationMs?: number;
+  chromeRevealed?: boolean;
+  isMobileLayout?: boolean;
 }
 
 const PortfolioLayout = ({
@@ -21,9 +25,13 @@ const PortfolioLayout = ({
   introMaskDelayMs = 0,
   introMaskDurationMs = 2000,
   introSidebarDelayMs = 0,
+  introSidebarDurationMs = 520,
+  chromeRevealed = true,
+  isMobileLayout = false,
 }: PortfolioLayoutProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = isMobileLayout;
+  const prefs = useMotionPrefs();
   const containerRef = useRef<HTMLDivElement>(null);
   const mainDisplayRef = useRef<HTMLDivElement>(null);
   const activeIndexRef = useRef(0);
@@ -31,8 +39,8 @@ const PortfolioLayout = ({
   const isAutoTransitioningRef = useRef(false);
   const onProjectChangeRef = useRef(onProjectChange);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const chromeRevealedRef = useRef(chromeRevealed);
 
-  // 스크롤 위치 동기화: 레이아웃 반영 후 실행해 리로드/깜빡임 방지
   const syncScrollToIndex = (index: number) => {
     requestAnimationFrame(() => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -42,32 +50,59 @@ const PortfolioLayout = ({
     });
   };
 
-  // 모바일 여부 확인
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // onProjectChange ref 업데이트
   useEffect(() => {
     onProjectChangeRef.current = onProjectChange;
   }, [onProjectChange]);
 
-  // activeIndex가 변경될 때 ref 업데이트
   useEffect(() => {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
 
+  useEffect(() => {
+    chromeRevealedRef.current = chromeRevealed;
+  }, [chromeRevealed]);
 
-  // 이미지만 있는 프로젝트는 1.5초 후 자동으로 다음 프로젝트로 전환 (애니메이션 시간 고려)
+  /** 발표용 북마크 — Shift+숫자로 바로 간다. 값은 1부터 세는 작품 번호.
+      사이드바가 거리에 비례한 시간으로 스크롤하므로 멀수록 더 길게 '스르륵' 지나간다. */
+  const BOOKMARKS: Record<string, number> = {
+    Digit1: 1,
+    Digit2: 47,
+    Digit3: 52,
+    Digit4: 55,
+  };
+
+  /** 모든 작품 이동의 단일 창구 — 휠·키보드·스와이프·클릭·자동전환이 공유한다 */
+  const goToIndex = useCallback(
+    (index: number, method: ProjectSelectMethod) => {
+      if (projects.length === 0) return;
+      const next = ((index % projects.length) + projects.length) % projects.length;
+      if (next === activeIndexRef.current) return;
+
+      if (imageAutoTransitionRef.current) {
+        clearTimeout(imageAutoTransitionRef.current);
+        imageAutoTransitionRef.current = null;
+        isAutoTransitioningRef.current = false;
+      }
+
+      activeIndexRef.current = next;
+      setActiveIndex(next);
+      onProjectChangeRef.current?.(projects[next], method);
+      syncScrollToIndex(next);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [projects],
+  );
+
+  const stepBy = useCallback(
+    (direction: 1 | -1, method: ProjectSelectMethod) => {
+      goToIndex(activeIndexRef.current + direction, method);
+    },
+    [goToIndex],
+  );
+
   useEffect(() => {
     if (projects.length === 0) return;
 
-    // 기존 타이머가 있으면 먼저 취소
     if (imageAutoTransitionRef.current) {
       clearTimeout(imageAutoTransitionRef.current);
       imageAutoTransitionRef.current = null;
@@ -76,25 +111,21 @@ const PortfolioLayout = ({
     const currentProject = projects[activeIndex];
     const isImageOnly = currentProject && !currentProject.video && currentProject.image;
 
-    // 자동 전환은 isScrollingRef 체크를 건너뛰고, isAutoTransitioningRef만 체크
     if (isImageOnly && activeIndex < projects.length - 1 && !isAutoTransitioningRef.current) {
       isAutoTransitioningRef.current = true;
-      
+
       imageAutoTransitionRef.current = setTimeout(() => {
-        // 현재 인덱스가 변경되지 않았을 때만 전환
         if (activeIndexRef.current === activeIndex) {
-          const nextIndex = (activeIndex + 1) % projects.length; // 순환
-          
+          const nextIndex = (activeIndex + 1) % projects.length;
+
           activeIndexRef.current = nextIndex;
           setActiveIndex(nextIndex);
-          
+
           if (onProjectChangeRef.current) {
             onProjectChangeRef.current(projects[nextIndex], 'auto');
           }
-          
+
           syncScrollToIndex(nextIndex);
-          
-          // 자동 전환 플래그 해제
           isAutoTransitioningRef.current = false;
         } else {
           isAutoTransitioningRef.current = false;
@@ -102,7 +133,6 @@ const PortfolioLayout = ({
         imageAutoTransitionRef.current = null;
       }, 1500);
     } else if (!isImageOnly) {
-      // 이미지가 아니면 플래그 해제
       isAutoTransitioningRef.current = false;
     }
 
@@ -114,59 +144,110 @@ const PortfolioLayout = ({
     };
   }, [activeIndex, projects.length]);
 
+  // 휠 — 이벤트 하나당 작품 하나. 원본 동작이며, 마우스 휠로 빠르게 훑을 때
+  // 감기는 느낌이 가장 좋다. (임계값·쿨다운을 걸면 초당 전환 수가 묶여 답답해진다)
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY;
-      const currentIndex = activeIndexRef.current;
-      const newIndex =
-        delta > 0
-          ? (currentIndex + 1) % projects.length
-          : (currentIndex - 1 + projects.length) % projects.length;
+    if (projects.length === 0) return;
 
-      if (newIndex === currentIndex) return;
-
-      activeIndexRef.current = newIndex;
-      setActiveIndex(newIndex);
-      if (onProjectChangeRef.current) {
-        onProjectChangeRef.current(projects[newIndex], 'wheel');
+    /** 정보 패널처럼 아직 스크롤 여지가 남은 영역 위에서는 네이티브 스크롤에 양보한다 */
+    const scrollableUnderCursor = (target: EventTarget | null, deltaY: number) => {
+      let node: Node | null = target instanceof Node ? target : null;
+      while (node && node !== document.body) {
+        if (node instanceof HTMLElement && node.dataset.scrollable !== undefined) {
+          const room = node.scrollHeight - node.clientHeight;
+          if (room > 1) {
+            const atTop = node.scrollTop <= 0;
+            const atBottom = node.scrollTop >= room - 1;
+            if ((deltaY < 0 && !atTop) || (deltaY > 0 && !atBottom)) return true;
+          }
+        }
+        node = node.parentNode;
       }
-      syncScrollToIndex(newIndex);
+      return false;
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (scrollableUnderCursor(e.target, e.deltaY)) return;
+
+      e.preventDefault();
+      stepBy(e.deltaY > 0 ? 1 : -1, 'wheel');
     };
 
     document.addEventListener('wheel', handleWheel, { passive: false, capture: true });
 
-    return () => document.removeEventListener('wheel', handleWheel, { capture: true } as EventListenerOptions);
-  }, [projects.length]);
+    return () => {
+      document.removeEventListener('wheel', handleWheel, {
+        capture: true,
+      } as EventListenerOptions);
+    };
+  }, [projects.length, stepBy]);
+
+  // 키보드 — 휠·스와이프 말고는 작품을 넘길 방법이 없었다.
+  // 방향키/PageUp·Down/Home·End로 59개 작품을 전부 훑을 수 있게 한다.
+  useEffect(() => {
+    if (projects.length === 0) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (!chromeRevealedRef.current) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const el = document.activeElement;
+      if (
+        el instanceof HTMLElement &&
+        (el.isContentEditable || /^(input|textarea|select)$/i.test(el.tagName))
+      ) {
+        return;
+      }
+
+      let target: number | null = null;
+
+      // Shift+1~4: 북마크. 키 자판에 따라 e.key가 '!'·'@'로 바뀌므로 e.code로 본다
+      if (e.shiftKey && e.code in BOOKMARKS) {
+        const bookmark = BOOKMARKS[e.code];
+        if (bookmark >= 1 && bookmark <= projects.length) {
+          e.preventDefault();
+          goToIndex(bookmark - 1, 'keyboard');
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'PageDown':
+          target = activeIndexRef.current + 1;
+          break;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+        case 'PageUp':
+          target = activeIndexRef.current - 1;
+          break;
+        case 'Home':
+          target = 0;
+          break;
+        case 'End':
+          target = projects.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      e.preventDefault();
+      goToIndex(target, 'keyboard');
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [projects.length, goToIndex]);
 
   const handleProjectClick = (index: number) => {
-    if (imageAutoTransitionRef.current) {
-      clearTimeout(imageAutoTransitionRef.current);
-      imageAutoTransitionRef.current = null;
-      isAutoTransitioningRef.current = false;
-    }
-    // 즉시 전환
-    activeIndexRef.current = index;
-    setActiveIndex(index);
-    if (onProjectChangeRef.current) {
-      onProjectChangeRef.current(projects[index], 'click');
-    }
-    syncScrollToIndex(index);
+    goToIndex(index, 'click');
   };
 
   const handleVideoEnd = () => {
-    if (projects.length > 0) {
-      const nextIndex = (activeIndexRef.current + 1) % projects.length;
-      activeIndexRef.current = nextIndex;
-      setActiveIndex(nextIndex);
-      if (onProjectChangeRef.current) {
-        onProjectChangeRef.current(projects[nextIndex], 'video_end');
-      }
-      syncScrollToIndex(nextIndex);
-    }
+    stepBy(1, 'video_end');
   };
 
-  // 모바일: 터치 스와이프 이벤트 처리
   useEffect(() => {
     if (!isMobile || !mainDisplayRef.current) return;
 
@@ -177,12 +258,11 @@ const PortfolioLayout = ({
       touchStartRef.current = {
         x: touch.clientX,
         y: touch.clientY,
-        time: Date.now()
+        time: Date.now(),
       };
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      // 스와이프 중에는 기본 동작 방지
       if (touchStartRef.current) {
         e.preventDefault();
       }
@@ -198,39 +278,9 @@ const PortfolioLayout = ({
       const absDeltaX = Math.abs(deltaX);
       const absDeltaY = Math.abs(deltaY);
 
-      // 스와이프 감지 (수직 또는 가로)
       if ((absDeltaY > 30 || absDeltaX > 30) && deltaTime < 300) {
-        const currentIndex = activeIndexRef.current;
-        let newIndex: number;
-
-        // 수직 스와이프 우선 처리
-        if (absDeltaY > absDeltaX) {
-          if (deltaY > 0) {
-            // 아래로 스와이프 - 다음 프로젝트 (순환)
-            newIndex = (currentIndex + 1) % projects.length;
-          } else {
-            // 위로 스와이프 - 이전 프로젝트 (순환)
-            newIndex = (currentIndex - 1 + projects.length) % projects.length;
-          }
-        } else {
-          // 가로 스와이프 처리
-          if (deltaX > 0) {
-            // 오른쪽으로 스와이프 - 이전 프로젝트 (순환)
-            newIndex = (currentIndex - 1 + projects.length) % projects.length;
-          } else {
-            // 왼쪽으로 스와이프 - 다음 프로젝트 (순환)
-            newIndex = (currentIndex + 1) % projects.length;
-          }
-        }
-
-        // 즉시 전환
-        activeIndexRef.current = newIndex;
-        setActiveIndex(newIndex);
-        if (onProjectChangeRef.current) {
-          onProjectChangeRef.current(projects[newIndex], 'swipe');
-        }
-
-        syncScrollToIndex(newIndex);
+        const primary = absDeltaY > absDeltaX ? deltaY : -deltaX;
+        stepBy(primary > 0 ? 1 : -1, 'swipe');
       }
 
       touchStartRef.current = null;
@@ -245,9 +295,8 @@ const PortfolioLayout = ({
       displayElement.removeEventListener('touchmove', handleTouchMove);
       displayElement.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [projects.length, isMobile]);
+  }, [isMobile, stepBy]);
 
-  // 초기 프로젝트 설정 및 인덱스 초기화 (마운트 시 1회만, projects.length 변경 시에만 재실행)
   useEffect(() => {
     if (projects.length > 0) {
       activeIndexRef.current = 0;
@@ -260,7 +309,6 @@ const PortfolioLayout = ({
       if (onProjectChange) {
         onProjectChange(projects[0], 'initial');
       }
-      // 레이아웃 반영 후 스크롤 초기화 (리로드처럼 보이는 현상 방지)
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, behavior: 'auto' });
       });
@@ -268,74 +316,113 @@ const PortfolioLayout = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects.length]);
 
+  const activeProject = projects[activeIndex];
+
   return (
     <div className="min-h-screen bg-white" ref={containerRef}>
-      {/* 모바일: 상단 썸네일 바, PC: 왼쪽 사이드바 */}
       <ProjectSidebar
         projects={projects}
         activeIndex={activeIndex}
         onProjectClick={handleProjectClick}
         isIntro={isIntro}
         introDelayMs={introSidebarDelayMs}
+        introDurationMs={introSidebarDurationMs}
+        chromeRevealed={chromeRevealed}
+        isMobile={isMobile}
       />
 
-      {/* 모바일: 메인 컨텐츠 영역, PC: 오른쪽 메인 영역 */}
-      <div className="md:ml-80 min-h-screen relative">
-        {/* 모바일: 썸네일 아래 1:1 비율 영상 영역, PC: 오른쪽 하단 메인 디스플레이 영역 (검은색 배경) */}
-        {/* 콘텐츠 프레임: 인증 후 오프닝 시 아래에서 위로 올라오는 마스킹 (PC·모바일 동일) */}
+      <div className={`min-h-screen relative ${isMobile ? '' : 'md:ml-[var(--layout-sidebar-w)]'}`}>
         <motion.div
           ref={mainDisplayRef}
           className="fixed bg-black"
-          initial={isIntro ? { clipPath: 'inset(0 0 100% 0)' } : false}
-          animate={{ clipPath: 'inset(0 0 0 0)' }}
+          initial={
+            isIntro
+              ? isMobile
+                ? { x: '100%' }
+                : { clipPath: 'inset(0 0 100% 0)' }
+              : false
+          }
+          animate={
+            isIntro
+              ? isMobile
+                ? { x: chromeRevealed ? 0 : '100%', clipPath: 'inset(0 0 0 0)' }
+                : { clipPath: 'inset(0 0 0 0)', x: 0 }
+              : { x: 0, clipPath: 'inset(0 0 0 0)' }
+          }
           transition={
             isIntro
-              ? { 
-                  duration: introMaskDurationMs / 1000, 
-                  ease: 'easeInOut', 
-                  delay: introMaskDelayMs / 1000
+              ? {
+                  duration: prefs.d(introMaskDurationMs / 1000),
+                  ease: ease.wipe,
+                  delay: prefs.delay(
+                    isMobile && !chromeRevealed ? 0 : introMaskDelayMs / 1000,
+                  ),
                 }
               : { duration: 0 }
           }
-          style={{ 
-            // PC: 원래 스타일
-            left: isMobile ? 0 : '20rem', // 사이드바 너비 (80 = 20rem)
-            right: isMobile ? 0 : '24rem', // 소개 패널 너비 (96 = 24rem)
-            // 모바일: 썸네일 아래에서 시작하는 1:1 비율 프레임 (썸네일 영역 제외)
-            // 헤더(4rem=64px) + 썸네일(h-20=20px) + 80px = 164px 아래에서 시작
-            top: isMobile ? 'calc(4rem + 20px + 80px)' : '4rem', // 모바일: 헤더(64px) + 썸네일(20px) + 80px = 164px
-            height: isMobile ? '100vw' : 'calc(100vh - 4rem)', // 모바일: 화면 너비와 동일한 높이 (1:1)
-            width: isMobile ? '100vw' : 'auto', // 모바일: 전체 너비
+          style={{
+            left: isMobile ? 0 : 'var(--layout-sidebar-w)',
+            right: isMobile ? 0 : 'var(--layout-info-w)',
+            top: isMobile
+              ? 'var(--layout-mobile-chrome-h)'
+              : 'var(--layout-header-h)',
+            height: isMobile
+              ? 'var(--layout-mobile-media-h)'
+              : 'calc(100vh - var(--layout-header-h))',
+            width: isMobile ? '100vw' : 'auto',
             bottom: isMobile ? 'auto' : 0,
-            zIndex: isMobile ? 10 : 20, // 모바일: 썸네일(z-30) 아래, PC: 기존 유지
+            zIndex: isMobile ? 10 : 20,
             overflow: 'hidden',
-            clipPath: 'inset(0 0 0 0)'
           }}
         >
-          <AnimatePresence mode="wait">
-            {projects[activeIndex] && (
+          {/* mode="wait"를 쓰면 나가는 컷이 다 사라진 뒤에야 다음 컷이 들어와
+              작품 사이마다 0.5초짜리 암전이 생겼다. 겹쳐서 크로스페이드한다. */}
+          <AnimatePresence initial={false}>
+            {activeProject && (
               <motion.div
-                key={projects[activeIndex].id}
+                key={activeProject.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                transition={{ duration: prefs.d(0.35), ease: ease.cut }}
                 className="absolute inset-0 flex items-center justify-center"
               >
                 <MainDisplay
-                  project={projects[activeIndex]}
+                  project={activeProject}
                   isVisible={true}
                   isIntro={isIntro}
+                  isMobile={isMobile}
+                  chromeRevealed={chromeRevealed}
+                  introMaskDelayMs={introMaskDelayMs}
+                  introMaskDurationMs={introMaskDurationMs}
                   onVideoEnd={handleVideoEnd}
                 />
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* 작품 인덱스 — 59개짜리 릴에서 지금 어디쯤인지가 유일하게 없던 단서 */}
+          {activeProject && chromeRevealed && (
+            <div className="absolute bottom-0 right-0 z-10 p-3 md:p-5 pointer-events-none">
+              <p className="work-counter text-[11px] md:text-xs text-white/70">
+                <span className="text-white">
+                  {String(activeIndex + 1).padStart(2, '0')}
+                </span>
+                <span className="mx-1 text-white/40">/</span>
+                {String(projects.length).padStart(2, '0')}
+              </p>
+            </div>
+          )}
+
+          {/* 화면 낭독기용 — 작품이 바뀔 때마다 제목을 알린다 */}
+          <p className="sr-only" aria-live="polite" aria-atomic="true">
+            {activeProject
+              ? `${activeIndex + 1}번째 작품, ${activeProject.title}, ${activeProject.category}`
+              : ''}
+          </p>
         </motion.div>
 
-        {/* 스크롤을 위한 더미 컨텐츠 - 각 프로젝트마다 화면 높이만큼 공간 확보 */}
         <div className="bg-white" style={{ height: `${projects.length * 100}vh`, minHeight: '100vh' }}>
-          {/* 각 프로젝트마다 섹션 생성하여 스크롤 감지 */}
           {projects.map((project) => (
             <div
               key={project.id}
@@ -352,4 +439,3 @@ const PortfolioLayout = ({
 };
 
 export default PortfolioLayout;
-

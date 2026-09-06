@@ -13,6 +13,7 @@ export type ProjectSelectMethod =
   | 'click'
   | 'wheel'
   | 'swipe'
+  | 'keyboard'
   | 'auto'
   | 'video_end'
   | 'initial';
@@ -60,8 +61,8 @@ export function trackMenuClick(label: string, section: string) {
 export function trackSectionView(section: 'works' | 'about' | 'contact') {
   const labels = {
     works: 'Portfolio',
-    about: 'About',
-    contact: 'About',
+    about: 'CV',
+    contact: 'CV',
   } as const;
   const path = section === 'works' ? '/' : `/#${section}`;
   trackPageView(path, labels[section]);

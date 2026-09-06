@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Project } from '../types';
+import { dur, ease, easeInOutQuint, useMotionPrefs } from '../motion';
 
 interface ProjectSidebarProps {
   projects: Project[];
@@ -8,7 +9,12 @@ interface ProjectSidebarProps {
   onProjectClick: (index: number) => void;
   isIntro?: boolean;
   introDelayMs?: number;
+  introDurationMs?: number;
+  chromeRevealed?: boolean;
+  isMobile?: boolean;
 }
+
+type Axis = 'vertical' | 'horizontal';
 
 const ProjectSidebar = ({
   projects,
@@ -16,232 +22,138 @@ const ProjectSidebar = ({
   onProjectClick,
   isIntro = false,
   introDelayMs = 0,
+  introDurationMs = 520,
+  chromeRevealed = true,
+  isMobile = false,
 }: ProjectSidebarProps) => {
   const loopCount = 3;
+  const prefs = useMotionPrefs();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const mobileSidebarRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const mobileItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const mobileItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const prevActiveIndexRef = useRef(activeIndex);
   const animationFrameRef = useRef<number | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const reducedRef = useRef(prefs.reduced);
+  reducedRef.current = prefs.reduced;
 
-  // 모바일 여부 확인
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  /**
+   * 세로(PC)·가로(모바일) 스크롤을 하나로 합친 관성 스크롤.
+   * 이전에는 축만 다른 같은 함수가 두 벌 있었다.
+   */
+  const smoothScroll = useCallback(
+    (element: HTMLElement, axis: Axis, target: number, duration: number) => {
+      const prop = axis === 'vertical' ? 'scrollTop' : 'scrollLeft';
 
-  // ease-in-out quint (더 강한 텐션감의 이지인 이지아웃)
-  const easeInOutQuint = (t: number): number => {
-    return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
-  };
-
-  // PC: 세로 스크롤 애니메이션 (이지인 이지아웃, 점프 거리에 따라 duration 조절)
-  const smoothScrollTo = (target: number, duration: number) => {
-    const sidebar = sidebarRef.current;
-    if (!sidebar) return;
-
-    const start = sidebar.scrollTop;
-    const distance = target - start;
-    const startTime = performance.now();
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = easeInOutQuint(progress);
-      sidebar.scrollTop = start + distance * eased;
-      if (progress < 1) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        animationFrameRef.current = null;
-      }
-    };
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    animationFrameRef.current = requestAnimationFrame(animate);
-  };
-
-  // 모바일: 가로 스크롤 애니메이션 (동일 이지인 이지아웃)
-  const smoothScrollToHorizontal = (sidebar: HTMLElement, targetLeft: number, duration: number) => {
-    const start = sidebar.scrollLeft;
-    const distance = targetLeft - start;
-    const startTime = performance.now();
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = easeInOutQuint(progress);
-      sidebar.scrollLeft = start + distance * eased;
-      if (progress < 1) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        animationFrameRef.current = null;
-      }
-    };
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    animationFrameRef.current = requestAnimationFrame(animate);
-  };
-
-  // activeIndex가 변경될 때 해당 썸네일이 항상 중앙에 위치하도록 스크롤 (PC: 세로, 이지인 이지아웃 + 점프 거리에 따른 duration)
-  useEffect(() => {
-    if (isMobile) return;
-
-    const activeItem = itemRefs.current[activeIndex];
-    const sidebar = sidebarRef.current;
-
-    if (activeItem && sidebar && !isIntro) {
-      const listHeight = sidebar.scrollHeight / loopCount;
-      const itemHeight = activeItem.offsetHeight;
-      const sidebarHeight = sidebar.clientHeight;
-      const currentScrollTop = sidebar.scrollTop;
-
-      const targetInCenterLoop = activeItem.offsetTop - (sidebarHeight / 2) + (itemHeight / 2);
-      let targetScroll = targetInCenterLoop;
-      const distanceToCenter = Math.abs(currentScrollTop - targetInCenterLoop);
-      const distanceToUpper = Math.abs(currentScrollTop - (targetInCenterLoop - listHeight));
-      const distanceToLower = Math.abs(currentScrollTop - (targetInCenterLoop + listHeight));
-
-      if (distanceToUpper < distanceToCenter && distanceToUpper < distanceToLower) {
-        targetScroll = targetInCenterLoop - listHeight;
-      } else if (distanceToLower < distanceToCenter && distanceToLower < distanceToUpper) {
-        targetScroll = targetInCenterLoop + listHeight;
-      }
-
-      const prev = prevActiveIndexRef.current;
-      const rawJump = Math.abs(activeIndex - prev);
-      const jumpSize = Math.min(rawJump, projects.length - rawJump);
-      const duration = 320 + jumpSize * 100;
-
-      smoothScrollTo(targetScroll, duration);
-      prevActiveIndexRef.current = activeIndex;
-    }
-
-    return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
-    };
-  }, [activeIndex, isIntro, projects.length, isMobile]);
 
-  // 모바일: activeIndex가 변경될 때 가로 스크롤 중앙 정렬 (이지인 이지아웃, 점프 거리에 따른 duration)
-  useEffect(() => {
-    if (!isMobile) return;
+      // 동작 줄이기: 관성 없이 바로 이동
+      if (reducedRef.current) {
+        element[prop] = target;
+        return;
+      }
 
-    const activeItem = mobileItemRefs.current[activeIndex];
-    const sidebar = mobileSidebarRef.current;
+      const start = element[prop];
+      const distance = target - start;
+      const startTime = performance.now();
 
-    if (activeItem && sidebar && !isIntro) {
-      const timeoutId = setTimeout(() => {
-        const listWidth = sidebar.scrollWidth / loopCount;
-        const itemWidth = activeItem.offsetWidth;
-        const sidebarWidth = sidebar.clientWidth;
-        const currentScrollLeft = sidebar.scrollLeft;
-
-        const targetInCenterLoop = activeItem.offsetLeft - (sidebarWidth / 2) + (itemWidth / 2);
-        let targetScroll = targetInCenterLoop;
-        const distanceToCenter = Math.abs(currentScrollLeft - targetInCenterLoop);
-        const distanceToLeft = Math.abs(currentScrollLeft - (targetInCenterLoop - listWidth));
-        const distanceToRight = Math.abs(currentScrollLeft - (targetInCenterLoop + listWidth));
-
-        if (distanceToLeft < distanceToCenter && distanceToLeft < distanceToRight) {
-          targetScroll = targetInCenterLoop - listWidth;
-        } else if (distanceToRight < distanceToCenter && distanceToRight < distanceToLeft) {
-          targetScroll = targetInCenterLoop + listWidth;
-        }
-
-        const prev = prevActiveIndexRef.current;
-        const rawJump = Math.abs(activeIndex - prev);
-        const jumpSize = Math.min(rawJump, projects.length - rawJump);
-        const duration = 320 + jumpSize * 100;
-
-        smoothScrollToHorizontal(sidebar, targetScroll, duration);
-        prevActiveIndexRef.current = activeIndex;
-      }, 80);
-
-      return () => {
-        clearTimeout(timeoutId);
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
+      const animate = (currentTime: number) => {
+        const progress = Math.min((currentTime - startTime) / duration, 1);
+        element[prop] = start + distance * easeInOutQuint(progress);
+        animationFrameRef.current = progress < 1 ? requestAnimationFrame(animate) : null;
       };
-    }
-  }, [activeIndex, isIntro, projects.length, isMobile, loopCount]);
 
-  // 무한 루핑 스크롤 설정 (중앙에서 시작하고 끝에 도달하면 점프) - PC: 세로 스크롤
+      animationFrameRef.current = requestAnimationFrame(animate);
+    },
+    [],
+  );
+
+  /**
+   * 3중 루프 중 현재 스크롤 위치에서 가장 가까운 사본으로 중앙 정렬한다.
+   * (루프를 건너뛰지 않아야 이동 거리가 최소가 된다)
+   */
+  const centerActiveItem = useCallback(
+    (element: HTMLElement, item: HTMLElement, axis: Axis) => {
+      const isVertical = axis === 'vertical';
+      const listSize = (isVertical ? element.scrollHeight : element.scrollWidth) / loopCount;
+      const itemSize = isVertical ? item.offsetHeight : item.offsetWidth;
+      const viewSize = isVertical ? element.clientHeight : element.clientWidth;
+      const current = isVertical ? element.scrollTop : element.scrollLeft;
+      const itemOffset = isVertical ? item.offsetTop : item.offsetLeft;
+
+      const centered = itemOffset - viewSize / 2 + itemSize / 2;
+      const candidates = [centered - listSize, centered, centered + listSize];
+      const target = candidates.reduce((best, candidate) =>
+        Math.abs(current - candidate) < Math.abs(current - best) ? candidate : best,
+      );
+
+      const rawJump = Math.abs(activeIndex - prevActiveIndexRef.current);
+      const jumpSize = Math.min(rawJump, projects.length - rawJump);
+      smoothScroll(element, axis, target, 320 + jumpSize * 100);
+      prevActiveIndexRef.current = activeIndex;
+    },
+    [activeIndex, projects.length, smoothScroll],
+  );
+
+  // PC: activeIndex가 바뀌면 해당 썸네일을 세로 중앙에 맞춘다
   useEffect(() => {
-    if (isMobile) return;
-    
+    if (isMobile || isIntro) return;
+    const item = itemRefs.current[activeIndex];
     const sidebar = sidebarRef.current;
-    if (!sidebar || projects.length === 0) return;
+    if (!item || !sidebar) return;
 
-    const setInitialPosition = () => {
-      const listHeight = sidebar.scrollHeight / loopCount;
-      if (listHeight > 0) {
-        sidebar.scrollTop = listHeight;
-      }
-    };
-
-    const handleLoopScroll = () => {
-      const listHeight = sidebar.scrollHeight / loopCount;
-      if (listHeight <= 0) return;
-
-      if (sidebar.scrollTop <= listHeight * 0.25) {
-        sidebar.scrollTop += listHeight;
-      } else if (sidebar.scrollTop >= listHeight * 1.75) {
-        sidebar.scrollTop -= listHeight;
-      }
-    };
-
-    const rafId = requestAnimationFrame(setInitialPosition);
-    sidebar.addEventListener('scroll', handleLoopScroll, { passive: true });
+    centerActiveItem(sidebar, item, 'vertical');
 
     return () => {
-      cancelAnimationFrame(rafId);
-      sidebar.removeEventListener('scroll', handleLoopScroll);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [projects.length, isMobile]);
+  }, [activeIndex, isIntro, isMobile, centerActiveItem]);
 
-  // 모바일: 가로 무한 루핑 스크롤 설정
+  // 모바일: 가로 중앙 정렬 (레이아웃이 잡힌 뒤 측정해야 해서 한 프레임 늦춘다)
   useEffect(() => {
-    if (!isMobile) return;
-    
+    if (!isMobile || isIntro) return;
     const sidebar = mobileSidebarRef.current;
-    if (!sidebar || projects.length === 0) return;
+    if (!sidebar) return;
+
+    const timeoutId = setTimeout(() => {
+      const item = mobileItemRefs.current[activeIndex];
+      if (item) centerActiveItem(sidebar, item, 'horizontal');
+    }, 80);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [activeIndex, isIntro, isMobile, centerActiveItem]);
+
+  /** 무한 루핑: 가운데 사본에서 시작하고 양 끝에 닿으면 한 리스트만큼 되돌린다 */
+  useEffect(() => {
+    const element = isMobile ? mobileSidebarRef.current : sidebarRef.current;
+    if (!element || projects.length === 0) return;
+    const prop = isMobile ? 'scrollLeft' : 'scrollTop';
+    const sizeProp = isMobile ? 'scrollWidth' : 'scrollHeight';
 
     const setInitialPosition = () => {
-      const listWidth = sidebar.scrollWidth / loopCount;
-      if (listWidth > 0) {
-        sidebar.scrollLeft = listWidth;
-      }
+      const listSize = element[sizeProp] / loopCount;
+      if (listSize > 0) element[prop] = listSize;
     };
 
     const handleLoopScroll = () => {
-      const listWidth = sidebar.scrollWidth / loopCount;
-      if (listWidth <= 0) return;
-
-      if (sidebar.scrollLeft <= listWidth * 0.25) {
-        sidebar.scrollLeft += listWidth;
-      } else if (sidebar.scrollLeft >= listWidth * 1.75) {
-        sidebar.scrollLeft -= listWidth;
-      }
+      const listSize = element[sizeProp] / loopCount;
+      if (listSize <= 0) return;
+      if (element[prop] <= listSize * 0.25) element[prop] += listSize;
+      else if (element[prop] >= listSize * 1.75) element[prop] -= listSize;
     };
 
     const rafId = requestAnimationFrame(setInitialPosition);
-    sidebar.addEventListener('scroll', handleLoopScroll, { passive: true });
+    element.addEventListener('scroll', handleLoopScroll, { passive: true });
 
     return () => {
       cancelAnimationFrame(rafId);
-      sidebar.removeEventListener('scroll', handleLoopScroll);
+      element.removeEventListener('scroll', handleLoopScroll);
     };
   }, [projects.length, isMobile]);
 
@@ -250,13 +162,12 @@ const ProjectSidebar = ({
     projects.map((project, index) => ({ project, index, loopIndex }))
   ).flat();
 
-  // 사이드바에서 휠 이벤트를 막아서 전체 페이지 휠 이벤트만 작동하도록 (PC와 모바일 모두)
+  // 사이드바 자체 스크롤은 막고 전체 페이지 휠 핸들러가 작품 전환을 담당한다
   useEffect(() => {
     const sidebar = sidebarRef.current;
     const mobileSidebar = mobileSidebarRef.current;
 
     const handleSidebarWheel = (e: WheelEvent) => {
-      // 사이드바의 기본 스크롤 방지 - 전체 페이지 휠 이벤트가 처리하도록
       e.preventDefault();
       e.stopPropagation();
     };
@@ -278,43 +189,45 @@ const ProjectSidebar = ({
     };
   }, []);
 
-  // PC 사이드바 렌더링
   const renderThumbnail = (project: Project, index: number, loopIndex: number, isMobile: boolean) => {
     const isActive = index === activeIndex && !isIntro;
-    const shouldAssignRef = loopIndex === 1;
+    // 3중 루프라 같은 작품이 세 번 나온다. 가운데 사본만 실제 컨트롤로 노출하고
+    // 나머지는 탭 순서·낭독 대상에서 뺀다. (그러지 않으면 탭 177번)
+    const isCanonical = loopIndex === 1;
     const refs = isMobile ? mobileItemRefs : itemRefs;
-    
+
     return (
-      <motion.div
+      <motion.button
         key={`${project.id}-${loopIndex}-${index}`}
+        type="button"
         ref={(el) => {
-          if (shouldAssignRef) {
-            refs.current[index] = el;
-          }
+          if (isCanonical) refs.current[index] = el;
         }}
         onClick={() => onProjectClick(index)}
-        className="cursor-pointer group flex items-center gap-3 flex-shrink-0"
+        tabIndex={isCanonical ? 0 : -1}
+        aria-hidden={isCanonical ? undefined : true}
+        aria-current={isActive ? 'true' : undefined}
+        aria-label={`${project.title} — ${project.category}`}
+        title={project.title}
+        className="cursor-pointer group flex items-center gap-3 flex-shrink-0 text-left bg-transparent border-0 p-0 appearance-none"
       >
-        {/* 정방형 썸네일 */}
-        <motion.div 
-          className="relative overflow-hidden bg-gray-100 flex-shrink-0"
-          style={{ 
-            width: '60px', 
-            height: '60px',
+        {/* 정방형 썸네일 — QHD에서 --layout-thumb으로 확대 */}
+        <motion.span
+          className="relative overflow-hidden bg-gray-100 flex-shrink-0 block"
+          style={{
+            width: isMobile ? 60 : 'var(--layout-thumb)',
+            height: isMobile ? 60 : 'var(--layout-thumb)',
             boxShadow: isActive ? 'inset 0 0 20px rgba(0, 0, 0, 0.3)' : 'none'
           }}
           animate={{
             clipPath: isActive ? 'inset(8% 8% 8% 8%)' : 'inset(0% 0% 0% 0%)',
           }}
-          transition={{
-            duration: 0.4,
-            ease: 'easeInOut'
-          }}
+          transition={prefs.t(dur.base, ease.panel)}
         >
           {project.thumbnail ? (
             <img
               src={project.thumbnail}
-              alt={project.title}
+              alt=""
               className="w-full h-full object-cover"
             />
           ) : project.video ? (
@@ -326,7 +239,7 @@ const ProjectSidebar = ({
               onMouseEnter={(e) => {
                 const video = e.currentTarget;
                 video.currentTime = 0;
-                video.play();
+                video.play().catch(() => {});
               }}
               onMouseLeave={(e) => {
                 const video = e.currentTarget;
@@ -337,69 +250,104 @@ const ProjectSidebar = ({
           ) : (
             <img
               src={project.image}
-              alt={project.title}
+              alt=""
               className="w-full h-full object-cover"
             />
           )}
-        </motion.div>
+        </motion.span>
         {/* 프로젝트 정보 텍스트 - 선택된 썸네일에만 표시 (페이드 효과), 모바일에서는 숨김 */}
         {!isMobile && (
           <AnimatePresence mode="wait">
             {isActive && (
-              <motion.div
+              <motion.span
                 key={`info-${activeIndex}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                transition={{ 
-                  duration: 0.3, 
-                  ease: 'easeInOut' 
-                }}
-                className="flex-1 min-w-0"
+                transition={prefs.t(0.3, ease.cut)}
+                className="flex-1 min-w-0 pr-2 block"
               >
-                <h3 className="text-xs font-normal mb-0.5 leading-tight">{project.title}</h3>
-                <p className="text-[10px] text-gray-500 font-light leading-tight">{project.category}</p>
-              </motion.div>
+                <span
+                  className="font-normal mb-0.5 leading-tight block"
+                  style={{ fontSize: 'var(--layout-meta)' }}
+                >
+                  {project.title}
+                </span>
+                <span
+                  className="text-gray-500 font-light leading-tight block"
+                  style={{ fontSize: 'calc(var(--layout-meta) - 0.125rem)' }}
+                >
+                  {project.category}
+                </span>
+              </motion.span>
             )}
           </AnimatePresence>
         )}
-      </motion.div>
+      </motion.button>
     );
   };
 
   return (
     <>
-      {/* PC: 왼쪽 세로 사이드바 */}
-      <motion.div 
+      {!isMobile && (
+      <motion.div
         ref={sidebarRef}
         initial={isIntro ? { x: '-100%' } : false}
         animate={{ x: 0 }}
-        transition={{ duration: 0.6, ease: 'easeInOut', delay: isIntro ? introDelayMs / 1000 : 0 }}
-        className="hidden md:block fixed left-0 top-16 bottom-0 w-80 overflow-y-auto bg-white z-30 border-r border-gray-200"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        transition={prefs.t(
+          introDurationMs / 1000,
+          ease.panel,
+          isIntro && chromeRevealed ? introDelayMs / 1000 : 0,
+        )}
+        className="fixed left-0 bottom-0 overflow-y-auto bg-white z-30 border-r border-gray-200"
+        role="group"
+        aria-label="작품 목록"
+        style={{
+          top: 'var(--layout-header-h)',
+          width: 'var(--layout-sidebar-w)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
       >
-        <div className="p-6 space-y-20">
-          {loopedProjects.map(({ project, index, loopIndex }) => 
+        <div
+          style={{
+            padding: 'var(--layout-sidebar-pad)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--layout-sidebar-gap)',
+          }}
+        >
+          {loopedProjects.map(({ project, index, loopIndex }) =>
             renderThumbnail(project, index, loopIndex, false)
           )}
         </div>
       </motion.div>
+      )}
 
-      {/* 모바일: 상단 가로 스크롤 */}
+      {isMobile && (
       <motion.div
         ref={mobileSidebarRef}
-        initial={isIntro ? { x: '-100%' } : false}
-        animate={{ x: 0 }}
-        transition={{ duration: 0.6, ease: 'easeInOut', delay: isIntro ? introDelayMs / 1000 : 0 }}
-        className="md:hidden fixed top-16 left-0 right-0 h-20 overflow-x-auto overflow-y-hidden border-b border-gray-200 bg-white z-30"
+        initial={isIntro ? { y: 'calc(-1 * var(--layout-mobile-chrome-h))' } : false}
+        animate={{
+          y: isIntro && !chromeRevealed ? 'calc(-1 * var(--layout-mobile-chrome-h))' : 0,
+        }}
+        transition={prefs.t(
+          introDurationMs / 1000,
+          ease.panel,
+          isIntro && chromeRevealed ? introDelayMs / 1000 : 0,
+        )}
+        className="fixed left-0 right-0 h-20 overflow-x-auto overflow-y-hidden border-b border-gray-200 bg-white z-30 top-[var(--layout-header-h)]"
+        role="group"
+        aria-label="작품 목록"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <div className="p-4 flex flex-row gap-4 h-full items-center">
-          {loopedProjects.map(({ project, index, loopIndex }) => 
+          {loopedProjects.map(({ project, index, loopIndex }) =>
             renderThumbnail(project, index, loopIndex, true)
           )}
         </div>
       </motion.div>
+      )}
     </>
   );
 };

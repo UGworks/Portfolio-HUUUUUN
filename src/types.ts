@@ -6,6 +6,7 @@ export interface Project {
   video?: string;
   thumbnail?: string; // 썸네일용 이미지 (비디오 프로젝트용)
   link?: string;
+  linkLabel?: string; // 링크 버튼 문구 (기본: 사이트 열기)
   description?: string;
   participation?: number; // 참여도 (0-100)
   keywords?: string[]; // 키워드 배열

@@ -34,19 +34,25 @@ const AboutPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen bg-white pt-16"
+      className="min-h-screen bg-white pt-[var(--layout-header-h)]"
       ref={containerRef}
     >
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <div
+        className="flex"
+        style={{ minHeight: 'calc(100vh - var(--layout-header-h))' }}
+      >
         {/* 왼쪽 빈 영역 */}
-        <div className="w-80 flex-shrink-0 border-r border-gray-200"></div>
+        <div
+          className="flex-shrink-0 border-r border-gray-200"
+          style={{ width: 'var(--layout-sidebar-w)' }}
+        />
         
         {/* 오른쪽 컨텐츠 영역 */}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="max-w-5xl mx-auto p-8 lg:p-16 space-y-12">
+          <div className="max-w-5xl min-[2560px]:max-w-6xl mx-auto p-8 lg:p-16 min-[2560px]:p-20 space-y-12">
         {/* About Me 헤더 */}
         <div>
-          <h1 className="text-4xl font-bold mb-6 text-center">About Me</h1>
+          <h1 className="text-4xl min-[2560px]:text-5xl font-bold mb-6 text-center">About Me</h1>
         </div>
 
         {/* 프로필 이미지와 소개 텍스트 2컬럼 */}
