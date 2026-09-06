@@ -823,7 +823,12 @@ function orderTvcfWithViralInMiddle(
   return [...nonViral.slice(0, mid), ...viral, ...nonViral.slice(mid)];
 }
 
-/** 포트폴리오 노출 순서: TVCF(Viral 중간) → Web UI/UX → IR → 미디어파사드 → 기타 */
+/** 자동 정렬 뒤에 특정 작품을 고정 순번(1부터)으로 옮긴다. 발표 동선용 */
+const PINNED_ORDER: Record<string, number> = {
+  '42': 4, // 넥센타이어
+};
+
+/** 포트폴리오 노출 순서: TVCF(Viral 중간) → Web UI/UX → IR → 미디어파사드 → 기타 → 고정 순번 적용 */
 export const projects: Project[] = (() => {
   const withMeta = projectsRaw.map((project, index) => ({
     project,
@@ -842,6 +847,13 @@ export const projects: Project[] = (() => {
         : sectionItems;
 
     ordered.push(...sorted.map(({ project }) => project));
+  }
+
+  for (const [id, position] of Object.entries(PINNED_ORDER)) {
+    const from = ordered.findIndex((project) => project.id === id);
+    if (from < 0) continue;
+    const [moved] = ordered.splice(from, 1);
+    ordered.splice(Math.min(Math.max(position - 1, 0), ordered.length), 0, moved);
   }
 
   return ordered;

@@ -62,13 +62,13 @@ const PortfolioLayout = ({
     chromeRevealedRef.current = chromeRevealed;
   }, [chromeRevealed]);
 
-  /** 발표용 북마크 — Shift+숫자로 바로 간다. 값은 1부터 세는 작품 번호.
+  /** 발표용 북마크 — Shift+숫자로 바로 간다. 값은 작품 id(순서를 바꿔도 같은 작품을 가리킨다).
       사이드바가 거리에 비례한 시간으로 스크롤하므로 멀수록 더 길게 '스르륵' 지나간다. */
-  const BOOKMARKS: Record<string, number> = {
-    Digit1: 1,
-    Digit2: 47,
-    Digit3: 52,
-    Digit4: 55,
+  const BOOKMARKS: Record<string, string> = {
+    Digit1: '1', // COWAY
+    Digit2: '34', // LG 인스타그램 운영
+    Digit3: '35-1', // Libratum Investment
+    Digit4: '60', // 대한민국육군
   };
 
   /** 모든 작품 이동의 단일 창구 — 휠·키보드·스와이프·클릭·자동전환이 공유한다 */
@@ -203,10 +203,10 @@ const PortfolioLayout = ({
 
       // Shift+1~4: 북마크. 키 자판에 따라 e.key가 '!'·'@'로 바뀌므로 e.code로 본다
       if (e.shiftKey && e.code in BOOKMARKS) {
-        const bookmark = BOOKMARKS[e.code];
-        if (bookmark >= 1 && bookmark <= projects.length) {
+        const index = projects.findIndex((project) => project.id === BOOKMARKS[e.code]);
+        if (index >= 0) {
           e.preventDefault();
-          goToIndex(bookmark - 1, 'keyboard');
+          goToIndex(index, 'keyboard');
         }
         return;
       }
