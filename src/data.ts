@@ -786,11 +786,12 @@ function getPortfolioSection(project: Project): PortfolioSection {
     return 'webui';
   }
 
+  // 'ir'는 단어 단위로만 본다 — 'Viral' 같은 단어 속 ir에 걸리면 안 된다
+  const hasIrWord = (text: string) => /\bir\b/.test(text);
   const isIr =
-    category.includes('ir') ||
-    title.includes('ir') ||
-    keywordStr.includes('ir event') ||
-    keywordStr.includes('ir ') ||
+    hasIrWord(category) ||
+    hasIrWord(title) ||
+    hasIrWord(keywordStr) ||
     category.includes('웹사이트구축');
 
   if (isIr) {
@@ -804,31 +805,44 @@ function getPortfolioSection(project: Project): PortfolioSection {
   return 'tvcf';
 }
 
-function isViralProject(project: Project): boolean {
-  const category = project.category.toLowerCase();
-  const keywordStr = (project.keywords ?? []).join(' ').toLowerCase();
-  return category.includes('viral') || keywordStr.includes('viral');
-}
+/** TVCF 블록(1~47번)의 주제별 순서. 발표 동선에 맞춰 손으로 정한다.
+    표에 없는 작품은 원래 순서대로 블록 끝에 붙는다. */
+const TVCF_THEME_ORDER: { theme: string; ids: string[] }[] = [
+  { theme: '홈가전', ids: ['1', '15'] }, // COWAY, LG전자 트롬
+  { theme: '모바일', ids: ['2', '28', '29', '47'] }, // LG G5, K40S, K50, Q6
+  { theme: '게임', ids: ['7', '31', '52'] }, // Terra M, NC Soft 20주년, 서든어택
+  { theme: '기능식품', ids: ['18', '43', '53', '58'] }, // 고려은단 ×2, VAP, 떠먹는 불가리스
+  {
+    theme: '식품·음료·유통',
+    ids: ['4', '6', '8', '63', '62', '30', '26', '45', '46', '48', '49', '20', '51', '22', '56'],
+  }, // 프렌치카페 ×4, 카와, 켈로그, 피자헛 ×3, 사조참치, 카스, DROPTOP, 테이스티사가, 이마트 ×2
+  { theme: '기업브랜드광고', ids: ['16', '37', '50', '21', '44'] }, // 금호아시아나, LOOKAS, STEPS, DXGOLF, OOH 15
+  { theme: '공익광고', ids: ['12', '13', '55'] }, // 공익광고협의회 ×2, 경기도
+  { theme: '뷰티', ids: ['19', '57', '61'] }, // Cellapy, 바슈롬, 젠틀피버
+  { theme: '모터', ids: ['25', '65', '53-1', '42'] }, // GENESIS, 현대자동차 월드컵, VERNA, 넥센타이어
+  { theme: '뮤직비디오', ids: ['32', '33'] }, // 김건모, 김조한
+  { theme: '의류', ids: ['40', '41'] }, // MANGO, 밀레
+];
 
-/** TVCF 내 Viral 작품을 중간 지점에 삽입 */
-function orderTvcfWithViralInMiddle(
+function orderTvcfByTheme(
   items: { project: Project; index: number }[],
 ): { project: Project; index: number }[] {
-  const viral = items.filter(({ project }) => isViralProject(project));
-  const nonViral = items.filter(({ project }) => !isViralProject(project));
-
-  if (viral.length === 0) return items;
-
-  const mid = Math.floor(nonViral.length / 2);
-  return [...nonViral.slice(0, mid), ...viral, ...nonViral.slice(mid)];
+  const rank = new Map<string, number>();
+  TVCF_THEME_ORDER.forEach(({ ids }, themeIndex) => {
+    ids.forEach((id, i) => rank.set(id, themeIndex * 1000 + i));
+  });
+  const listed = items
+    .filter(({ project }) => rank.has(project.id))
+    .sort((a, b) => rank.get(a.project.id)! - rank.get(b.project.id)!);
+  const rest = items.filter(({ project }) => !rank.has(project.id));
+  return [...listed, ...rest];
 }
 
-/** 자동 정렬 뒤에 특정 작품을 고정 순번(1부터)으로 옮긴다. 발표 동선용 */
-const PINNED_ORDER: Record<string, number> = {
-  '42': 4, // 넥센타이어
-};
+/** 자동 정렬 뒤에 특정 작품을 고정 순번(1부터)으로 옮긴다. 발표 동선용.
+    예: { '42': 4 } → 넥센타이어를 4번으로. 주제 순서를 깨므로 필요할 때만 쓴다. */
+const PINNED_ORDER: Record<string, number> = {};
 
-/** 포트폴리오 노출 순서: TVCF(Viral 중간) → Web UI/UX → IR → 미디어파사드 → 기타 → 고정 순번 적용 */
+/** 포트폴리오 노출 순서: TVCF(주제별) → Web UI/UX → IR → 미디어파사드 → 기타 → 고정 순번 적용 */
 export const projects: Project[] = (() => {
   const withMeta = projectsRaw.map((project, index) => ({
     project,
@@ -843,7 +857,7 @@ export const projects: Project[] = (() => {
     const sectionItems = withMeta.filter(({ section: s }) => s === section);
     const sorted =
       section === 'tvcf'
-        ? orderTvcfWithViralInMiddle(sectionItems)
+        ? orderTvcfByTheme(sectionItems)
         : sectionItems;
 
     ordered.push(...sorted.map(({ project }) => project));
