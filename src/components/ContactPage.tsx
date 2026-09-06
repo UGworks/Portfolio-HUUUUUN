@@ -645,55 +645,11 @@ const FIG_MUTE = 'var(--ink-3)';
 const FIG_RULE = 'var(--rule)';
 const FIG_NOW = 'var(--now)';
 
-/* ── 단계 순환 강조 ────────────────────────────────────────────
-   그림의 단계를 일정 간격으로 하나씩 밝혀 흐름을 읽게 한다.
-   동작 줄이기 설정이면 멈추고(-1) 모두 같은 톤으로 둔다. */
-const STEP_MS = 1500;
-const useStepCycle = (count: number, ms = STEP_MS) => {
-  const reduced = useReducedMotion();
-  const [step, setStep] = useState(0);
-  useEffect(() => {
-    if (reduced || count <= 1) return;
-    const id = window.setInterval(() => setStep((v) => (v + 1) % count), ms);
-    return () => window.clearInterval(id);
-  }, [count, ms, reduced]);
-  return reduced ? -1 : step;
-};
-
-/** 활성 단계 위에 켜지는 붉은 테두리와 옅은 채움. 상자와 같은 좌표·크기로 놓는다 */
-const Glow = ({
-  x,
-  y,
-  w,
-  h,
-  rx = 6,
-  active,
-}: {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rx?: number;
-  active: boolean;
-}) => (
-  <motion.g
-    initial={false}
-    animate={{ opacity: active ? 1 : 0 }}
-    transition={{ duration: 0.45, ease: 'easeOut' }}
-    style={{ pointerEvents: 'none' }}
-  >
-    <rect x={x} y={y} width={w} height={h} rx={rx} fill={FIG_NOW} fillOpacity={0.07} />
-    <rect x={x} y={y} width={w} height={h} rx={rx} fill="none" stroke={FIG_NOW} strokeWidth={1.6} />
-  </motion.g>
-);
-
 /** 그림 1 — 문제(텍스트 보고서) → 변환(AI 생성형 시각화) → 목적(의사결정) */
 const PipelineFigure = () => {
-  const step = useStepCycle(3);
-  const node = (y: number, title: string, sub: string, icon: ReactNode, accent = false, active = false) => (
+  const node = (y: number, title: string, sub: string, icon: ReactNode, accent = false) => (
     <g transform={`translate(0 ${y})`}>
       <rect x="0.5" y="0.5" width="319" height="72" rx="8" fill="none" stroke={accent ? FIG_INK : FIG_RULE} strokeWidth={accent ? 1.5 : 1} />
-      <Glow x={0.5} y={0.5} w={319} h={72} rx={8} active={active} />
       <g transform="translate(14 12)">{icon}</g>
       <text x="76" y="30" fontSize="13.5" fontWeight="600" fill={FIG_INK}>{title}</text>
       <text x="76" y="50" fontSize="11" fill={FIG_MUTE}>{sub}</text>
@@ -743,11 +699,11 @@ const PipelineFigure = () => {
   );
   return (
     <svg viewBox="0 0 320 288" role="img" aria-label="연구 파이프라인: 텍스트 보고서에서 AI 생성형 시각화를 거쳐 의사결정으로">
-      {node(0, '텍스트 중심 투심보고서', '비정형 · 고밀도 · 선형 읽기', textIcon, false, step === 0)}
+      {node(0, '텍스트 중심 투심보고서', '비정형 · 고밀도 · 선형 읽기', textIcon)}
       {arrow(74, 'AI 생성형 시각화')}
-      {node(107, '시각 위계 · 데이터 서사', '형태 · 색 · 움직임 · 시간 구조', visIcon, true, step === 1)}
+      {node(107, '시각 위계 · 데이터 서사', '형태 · 색 · 움직임 · 시간 구조', visIcon, true)}
       {arrow(181, '판단 지원')}
-      {node(214, '투자 의사결정', '속도 · 정확도 ↑ / 인지 부담 ↓', decideIcon, false, step === 2)}
+      {node(214, '투자 의사결정', '속도 · 정확도 ↑ / 인지 부담 ↓', decideIcon)}
     </svg>
   );
 };
@@ -761,7 +717,6 @@ const Quad = ({
   sub,
   accent = false,
   site,
-  active = false,
 }: {
   x: number;
   y: number;
@@ -769,7 +724,6 @@ const Quad = ({
   sub?: string;
   accent?: boolean;
   site?: SitePreview;
-  active?: boolean;
 }) => {
   const { handlers, popup } = useSitePeek(site);
   const openSite = useOpenSite();
@@ -791,7 +745,6 @@ const Quad = ({
         <text x="12" y="28" fontSize="12" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
       )}
       {accent && <circle cx="125" cy="13" r="4" fill={FIG_NOW} />}
-      <Glow x={0.5} y={0.5} w={139} h={47} rx={8} active={active} />
     </g>
     {popup}
     </>
@@ -799,7 +752,6 @@ const Quad = ({
 };
 
 const LandscapeFigure = () => {
-  const step = useStepCycle(4);
   return (
     <svg viewBox="0 0 320 138" role="img" aria-label="선행 연구 지형도: 규칙과 서사, 수동 설계와 자동 생성의 두 축에서 본 연구의 위치">
       <text x="102" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">규칙 · 구조</text>
@@ -807,10 +759,10 @@ const LandscapeFigure = () => {
       <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 44) rotate(-90)">수동 설계</text>
       <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 110) rotate(-90)">자동 생성</text>
       <g transform="translate(32 20)">
-        <Quad x={0} y={0} title="정보 시각화 이론" site={SITE.eyes} active={step === 0} />
-        <Quad x={148} y={0} title="정보 미학 · 서사" site={SITE.narrative} active={step === 1} />
-        <Quad x={0} y={66} title="LLM 자동 시각화" site={SITE.data2vis} active={step === 2} />
-        <Quad x={148} y={66} title="본 연구" sub="시각적 서사 × 자동 생성" accent active={step === 3} />
+        <Quad x={0} y={0} title="정보 시각화 이론" site={SITE.eyes} />
+        <Quad x={148} y={0} title="정보 미학 · 서사" site={SITE.narrative} />
+        <Quad x={0} y={66} title="LLM 자동 시각화" site={SITE.data2vis} />
+        <Quad x={148} y={66} title="본 연구" sub="시각적 서사 × 자동 생성" accent />
         <g fill="none" stroke={FIG_NOW} strokeWidth="1.2" strokeDasharray="3 3">
           <path d="M140 48 L148 66" />
           <path d="M218 48 L218 66" />
@@ -829,39 +781,25 @@ const MappingFigure = () => {
   const ly = (i: number) => 22 + i * 30;
   const ry = (i: number) => 12 + i * 22;
   const edges: [number, number][] = [[0, 0], [0, 3], [1, 1], [1, 2], [2, 0], [2, 3]];
-  const step = useStepCycle(edges.length, 1200);
-  const [ha, hb] = edges[step < 0 ? 3 : step];
-  const d = (a: number, b: number) => `M118 ${ly(a)} C 170 ${ly(a)}, 190 ${ry(b)}, 236 ${ry(b)}`;
   return (
     <svg viewBox="0 0 320 100" role="img" aria-label="비정형 금융 데이터를 형태·색·움직임·시간의 시각 변수로 옮기는 매핑 규칙">
       <g stroke={FIG_RULE} strokeWidth="1">
         {edges.map(([a, b]) => (
-          <path key={`${a}-${b}`} d={d(a, b)} fill="none" />
+          <path key={`${a}-${b}`} d={`M118 ${ly(a)} C 170 ${ly(a)}, 190 ${ry(b)}, 236 ${ry(b)}`} fill="none" />
         ))}
       </g>
-      {/* 활성 간선: 왼쪽에서 오른쪽으로 그려진다 */}
-      <motion.path
-        key={`${ha}-${hb}`}
-        d={d(ha, hb)}
-        fill="none"
-        stroke={FIG_NOW}
-        strokeWidth="1.6"
-        initial={step < 0 ? false : { pathLength: 0, opacity: 0.4 }}
-        animate={{ pathLength: 1, opacity: 1 }}
-        transition={{ duration: 0.7, ease: 'easeInOut' }}
-      />
+      <path d={`M118 ${ly(1)} C 170 ${ly(1)}, 190 ${ry(2)}, 236 ${ry(2)}`} fill="none" stroke={FIG_NOW} strokeWidth="1.5" />
       {left.map((t, i) => (
         <g key={t}>
           <rect x="0.5" y={ly(i) - 11} width="112" height="22" rx="4" fill="none" stroke={FIG_RULE} />
-          <Glow x={0.5} y={ly(i) - 11} w={112} h={22} rx={4} active={i === ha} />
           <text x="12" y={ly(i) + 4} fontSize="11" fill={FIG_INK}>{t}</text>
-          <circle cx="118" cy={ly(i)} r="2.5" fill={i === ha ? FIG_NOW : FIG_INK} />
+          <circle cx="118" cy={ly(i)} r="2.5" fill={FIG_INK} />
         </g>
       ))}
       {right.map((t, i) => (
         <g key={t}>
-          <circle cx="236" cy={ry(i)} r="2.5" fill={i === hb ? FIG_NOW : FIG_INK} />
-          <text x="248" y={ry(i) + 4} fontSize="11" fontWeight={i === hb ? 600 : 400} fill={FIG_INK}>{t}</text>
+          <circle cx="236" cy={ry(i)} r="2.5" fill={i === 2 ? FIG_NOW : FIG_INK} />
+          <text x="248" y={ry(i) + 4} fontSize="11" fontWeight={i === 2 ? 600 : 400} fill={FIG_INK}>{t}</text>
         </g>
       ))}
       <text x="177" y="96" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">매핑 규칙</text>
@@ -873,11 +811,9 @@ const MappingFigure = () => {
 const SignalFigure = () => {
   const lines = [44, 40, 46, 30, 42, 38, 46, 34, 40, 28];
   const hot = new Set([2, 6]);
-  const step = useStepCycle(3);
   return (
     <svg viewBox="0 0 320 100" role="img" aria-label="리포트 텍스트에서 AI가 핵심 신호를 가려내 시각 위계로 배치">
       <rect x="0.5" y="0.5" width="96" height="99" rx="6" fill="none" stroke={FIG_RULE} />
-      <Glow x={0.5} y={0.5} w={96} h={99} rx={6} active={step === 0} />
       <g strokeWidth="2" strokeLinecap="round">
         {lines.map((w, i) => (
           <line key={i} x1="12" y1={12 + i * 8.5} x2={12 + w} y2={12 + i * 8.5} stroke={hot.has(i) ? FIG_NOW : FIG_RULE} />
@@ -886,13 +822,11 @@ const SignalFigure = () => {
       <g transform="translate(112 34)">
         <path d="M0 0 L40 0 L28 20 L28 34 L12 34 L12 20 Z" fill="none" stroke={FIG_INK} strokeWidth="1.2" strokeLinejoin="round" />
         <text x="20" y="-8" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">AI 선별</text>
-        <Glow x={-8} y={-18} w={56} h={58} rx={6} active={step === 1} />
       </g>
       <line x1="156" y1="50" x2="176" y2="50" stroke={FIG_NOW} strokeWidth="1.5" />
       <polygon points="174,45 182,50 174,55" fill={FIG_NOW} />
       <g transform="translate(192 0)">
         <rect x="0.5" y="0.5" width="127" height="40" rx="4" fill={FIG_INK} />
-        <Glow x={-6} y={-6} w={134} h={106} rx={6} active={step === 2} />
         <text x="10" y="18" fontSize="10.5" fontWeight="600" fill="var(--paper)">리스크 신호</text>
         <text x="10" y="32" fontSize="9" fill="var(--paper)">가장 크게 · 먼저</text>
         <rect x="0.5" y="48.5" width="80" height="22" rx="4" fill="none" stroke={FIG_INK} />
@@ -906,13 +840,10 @@ const SignalFigure = () => {
 };
 
 /** 그림 5 — 발표자 의존 IR → 데이터가 스스로 움직이는 실시간 IR */
-const LiveIrFigure = () => {
-  const step = useStepCycle(2, 1800);
-  return (
+const LiveIrFigure = () => (
   <svg viewBox="0 0 320 100" role="img" aria-label="실시간 스트리밍 안에서 데이터가 스스로 변하며 정보를 전하는 IR 모델">
     <g transform="translate(0 6)">
       <rect x="0.5" y="0.5" width="118" height="70" rx="6" fill="none" stroke={FIG_RULE} />
-      <Glow x={0.5} y={0.5} w={118} h={70} rx={6} active={step === 0} />
       <circle cx="59" cy="26" r="10" fill="none" stroke={FIG_MUTE} strokeWidth="1.2" />
       <path d="M38 62 C 38 44, 80 44, 80 62" fill="none" stroke={FIG_MUTE} strokeWidth="1.2" />
       <text x="59" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">발표자 중심</text>
@@ -921,7 +852,6 @@ const LiveIrFigure = () => {
     <polygon points="152,36 160,41 152,46" fill={FIG_NOW} />
     <g transform="translate(172 6)">
       <rect x="0.5" y="0.5" width="147" height="70" rx="6" fill="none" stroke={FIG_INK} strokeWidth="1.5" />
-      <Glow x={0.5} y={0.5} w={147} h={70} rx={6} active={step === 1} />
       <polyline points="12,52 34,40 56,46 78,24 100,30 122,14 136,20" fill="none" stroke={FIG_INK} strokeWidth="1.5" strokeLinejoin="round" />
       <circle cx="136" cy="20" r="3.5" fill={FIG_NOW} />
       <g stroke={FIG_RULE} strokeWidth="1">
@@ -935,8 +865,7 @@ const LiveIrFigure = () => {
       <text x="74" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">데이터 중심 · 실시간</text>
     </g>
   </svg>
-  );
-};
+);
 
 const InterestFigures = () => (
   <aside className="cvx-figures" aria-label="시각자료">
@@ -957,11 +886,9 @@ const InterestFigures = () => (
 
 /** 그림 6 — 연구 로드맵: 입력(정량·정성) → 세 단계 → 산출물 */
 const RoadmapFigure = () => {
-  const step = useStepCycle(4);
-  const stage = (y: number, num: string, title: string, out: string, accent = false, active = false) => (
+  const stage = (y: number, num: string, title: string, out: string, accent = false) => (
     <g transform={`translate(0 ${y})`}>
       <rect x="0.5" y="0.5" width="319" height="52" rx="6" fill={accent ? FIG_INK : 'none'} stroke={accent ? FIG_INK : FIG_RULE} strokeWidth={accent ? 1.5 : 1} />
-      <Glow x={0.5} y={0.5} w={319} h={52} rx={6} active={active} />
       <text x="14" y="32" fontSize="14" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_NOW} letterSpacing="0.02em">{num}</text>
       <text x="48" y="22" fontSize="11.5" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
       <text x="48" y="40" fontSize="10" fill={accent ? 'var(--paper)' : FIG_MUTE}>{out}</text>
@@ -986,28 +913,23 @@ const RoadmapFigure = () => {
         <path d="M77 35 L77 42 L243 42 L243 35" fill="none" stroke={FIG_RULE} />
         <line x1="160" y1="42" x2="160" y2="52" stroke={FIG_NOW} strokeWidth="1.5" />
         <polygon points="155,48 165,48 160,54" fill={FIG_NOW} />
-        <Glow x={0.5} y={0.5} w={154} h={34} rx={6} active={step === 0} />
-        <Glow x={165.5} y={0.5} w={154} h={34} rx={6} active={step === 0} />
       </g>
-      {stage(58, '01', '이론 정립 · 정보 미학 프레임워크', '산출: 데이터 → 시각 기호 변환 규칙, 미학적 기준', false, step === 1)}
+      {stage(58, '01', '이론 정립 · 정보 미학 프레임워크', '산출: 데이터 → 시각 기호 변환 규칙, 미학적 기준')}
       {link(111)}
-      {stage(128, '02', 'AI 생성형 시각화 시스템 구현', '산출: 데이터 → 시각 서사 자동 변환 프로토타입', true, step === 2)}
+      {stage(128, '02', 'AI 생성형 시각화 시스템 구현', '산출: 데이터 → 시각 서사 자동 변환 프로토타입', true)}
       {link(181)}
-      {stage(198, '03', '실무 그룹 대상 정량 · 정성 검증', '산출: 정보 습득 속도 · 정확도 · 신뢰도 변화', false, step === 3)}
+      {stage(198, '03', '실무 그룹 대상 정량 · 정성 검증', '산출: 정보 습득 속도 · 정확도 · 신뢰도 변화')}
     </svg>
   );
 };
 
 /** 그림 7 — 검증 설계: A/B 비교 + 전문가 인터뷰 → 측정 지표 */
-const ValidationFigure = () => {
-  const step = useStepCycle(3);
-  return (
+const ValidationFigure = () => (
   <svg viewBox="0 0 320 132" role="img" aria-label="검증 설계: 텍스트 리포트와 자동 생성 영상을 견주는 A/B 테스트와 전문가 인터뷰">
     <text x="0" y="10" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">투자 운용 · 심사 실무자</text>
     {/* A: 텍스트 리포트 */}
     <g transform="translate(0 18)">
       <rect x="0.5" y="0.5" width="92" height="56" rx="6" fill="none" stroke={FIG_RULE} />
-      <Glow x={0.5} y={0.5} w={92} h={56} rx={6} active={step === 0} />
       <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>A · 텍스트 리포트</text>
       <g stroke={FIG_RULE} strokeWidth="2" strokeLinecap="round">
         {[26, 33, 40, 47].map((y, i) => (
@@ -1018,7 +940,6 @@ const ValidationFigure = () => {
     {/* B: 자동 생성 영상 */}
     <g transform="translate(0 84)">
       <rect x="0.5" y="0.5" width="92" height="46" rx="6" fill="none" stroke={FIG_INK} strokeWidth="1.5" />
-      <Glow x={0.5} y={0.5} w={92} h={46} rx={6} active={step === 1} />
       <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>B · 자동 생성 영상</text>
       <rect x="10" y="24" width="10" height="16" rx="1" fill={FIG_INK} />
       <rect x="24" y="30" width="10" height="10" rx="1" fill={FIG_INK} />
@@ -1032,7 +953,6 @@ const ValidationFigure = () => {
     {/* 지표 */}
     <g transform="translate(136 18)">
       <rect x="0.5" y="0.5" width="184" height="112" rx="6" fill="none" stroke={FIG_RULE} />
-      <Glow x={0.5} y={0.5} w={184} h={112} rx={6} active={step === 2} />
       <text x="12" y="18" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">측정 지표</text>
       {[
         ['정보 습득 속도', 0.82],
@@ -1047,8 +967,7 @@ const ValidationFigure = () => {
       ))}
     </g>
   </svg>
-  );
-};
+);
 
 /** 그림 8 — 기대 효과의 파급: 본 연구 → PE 실무 → 자본 시장 → 투자 생태계. 아래로 갈수록 넓어진다 */
 const ImpactFigure = () => {
@@ -1058,7 +977,6 @@ const ImpactFigure = () => {
     [252, '자본 시장의 정보 격차 완화', '차세대 IR 시스템'],
     [320, '투자 생태계의 투명성', '사회적 가치'],
   ];
-  const step = useStepCycle(tiers.length);
   return (
     <svg viewBox="0 0 320 224" role="img" aria-label="기대 효과의 파급: 본 연구에서 PE 실무, 자본 시장, 투자 생태계로 넓어진다">
       {tiers.map(([w, title, sub], i) => {
@@ -1067,7 +985,6 @@ const ImpactFigure = () => {
         return (
           <g key={title} transform={`translate(0 ${y})`}>
             <rect x="0.5" y="0.5" width={w - 1} height="42" rx="6" fill={accent ? FIG_INK : 'none'} stroke={accent ? FIG_INK : FIG_RULE} />
-            <Glow x={0.5} y={0.5} w={w - 1} h={42} rx={6} active={step === i} />
             <text x="14" y="19" fontSize="11" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
             <text x="14" y="33" fontSize="9.5" fill={accent ? 'var(--paper)' : FIG_MUTE}>{sub}</text>
             {i < tiers.length - 1 && (
@@ -1091,11 +1008,9 @@ const AfterFigure = () => {
     ['학문적 지평의 실물 경제 확장', '데이터 시각화 연구의 산업 적용'],
   ];
   const cy = (i: number) => 20 + i * 52;
-  const step = useStepCycle(items.length + 1);
   return (
     <svg viewBox="0 -3 320 150" role="img" aria-label="졸업 후 계획: 연구 성과를 상용화, 융합 전문가 활동, 학문적 확장으로 잇는다">
       <rect x="0.5" y="47.5" width="96" height="50" rx="6" fill={FIG_INK} />
-      <Glow x={0.5} y={47.5} w={96} h={50} rx={6} active={step === 0} />
       <text x="48" y="69" fontSize="11" fontWeight="600" fill="var(--paper)" textAnchor="middle">연구 성과</text>
       <text x="48" y="84" fontSize="9" fill="var(--paper)" textAnchor="middle">석사 과정</text>
       {/* 줄기: 상자 오른쪽에서 나와 세로로 서고, 각 갈래로 수평 가지 */}
@@ -1110,7 +1025,6 @@ const AfterFigure = () => {
         <g key={title} transform={`translate(126 ${cy(i) - 20})`}>
           <circle cx="0" cy="20" r="2.5" fill={FIG_NOW} />
           <rect x="6.5" y="0.5" width="187" height="40" rx="6" fill="none" stroke={FIG_RULE} />
-          <Glow x={6.5} y={0.5} w={187} h={40} rx={6} active={step === i + 1} />
           <text x="18" y="17" fontSize="10.5" fontWeight="600" fill={FIG_INK}>{title}</text>
           <text x="18" y="31" fontSize="9" fill={FIG_MUTE}>{sub}</text>
         </g>
