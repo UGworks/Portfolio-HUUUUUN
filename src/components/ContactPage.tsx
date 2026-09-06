@@ -140,9 +140,21 @@ const educationPeriod = (item: (typeof EDUCATION)[number]) =>
 type FactItem = string | { text: string; site?: SitePreview };
 const factText = (item: FactItem) => (typeof item === 'string' ? item : item.text);
 
+/** 좁은 화면에서 행 바로 아래에 끼워 넣을 그림 이름(INLINE_FIGURES의 키) */
+type InlineFigureName =
+  | 'pipeline'
+  | 'landscape'
+  | 'mapping'
+  | 'signal'
+  | 'live'
+  | 'roadmap'
+  | 'validation'
+  | 'impact'
+  | 'after';
+
 type Block =
-  | { kind: 'sub'; text: string }
-  | { kind: 'quote'; text: string; source?: string }
+  | { kind: 'sub'; text: string; figure?: InlineFigureName }
+  | { kind: 'quote'; text: string; source?: string; figure?: InlineFigureName }
   | { kind: 'facts'; items: FactItem[] }
   | { kind: 'p'; text: string };
 
@@ -160,8 +172,9 @@ const MOTIVATION_BLOCKS: Block[] = [
     kind: 'quote',
     text: '복잡한 텍스트 중심의 투심보고서,\n의사결정의 속도를 늦추는 정보 구조.\nAI 생성형 시각화로 이 병목을 푸는 것이\n본\u00A0연구의 출발점.',
     source: '현장에서 마주한 문제의식',
+    figure: 'pipeline',
   },
-  { kind: 'sub', text: '연구로 잇는 지점' },
+  { kind: 'sub', text: '연구로 잇는 지점', figure: 'landscape' },
   {
     kind: 'facts',
     items: [
@@ -215,7 +228,7 @@ const researchStages = [
 ];
 
 const OUTLOOK_BLOCKS: Block[] = [
-  { kind: 'sub', text: '기대 효과' },
+  { kind: 'sub', text: '기대 효과', figure: 'impact' },
   {
     kind: 'facts',
     items: [
@@ -228,7 +241,7 @@ const OUTLOOK_BLOCKS: Block[] = [
     text: '보조 도구를 넘어 의사결정의 핵심 인터페이스로.\n데이터 시각화의 위상 전환이 본\u00A0연구의 목표.',
     source: '연구의 목표',
   },
-  { kind: 'sub', text: '졸업 후 계획' },
+  { kind: 'sub', text: '졸업 후 계획', figure: 'after' },
   {
     kind: 'facts',
     items: [
@@ -437,18 +450,18 @@ const velocityFrom = (history: { y: number; t: number }[], now: number) => {
  * 마커는 행 사이의 가는 선 하나뿐이라 글머리 기호가 섞이지 않는다.
  */
 type TableRow =
-  | { kind: 'row'; label: string; content: Exclude<Block, { kind: 'sub' | 'quote' }>[] }
-  | { kind: 'quote'; text: string; source?: string };
+  | { kind: 'row'; label: string; content: Exclude<Block, { kind: 'sub' | 'quote' }>[]; figure?: InlineFigureName }
+  | { kind: 'quote'; text: string; source?: string; figure?: InlineFigureName };
 
 const groupBlocks = (blocks: Block[]): TableRow[] => {
   const rows: TableRow[] = [];
   let current: Extract<TableRow, { kind: 'row' }> | null = null;
   for (const block of blocks) {
     if (block.kind === 'sub') {
-      current = { kind: 'row', label: block.text, content: [] };
+      current = { kind: 'row', label: block.text, content: [], figure: block.figure };
       rows.push(current);
     } else if (block.kind === 'quote') {
-      rows.push({ kind: 'quote', text: block.text, source: block.source });
+      rows.push({ kind: 'quote', text: block.text, source: block.source, figure: block.figure });
       current = null;
     } else {
       if (!current) {
@@ -467,7 +480,10 @@ const renderBlocks = (blocks: Block[]) => (
       row.kind === 'quote' ? (
         <div key={`quote-${index}`} className="cvx-row cvx-row--quote">
           <p className="cvx-rail-label">{row.source ?? ''}</p>
-          <blockquote className="cvx-quote">{row.text}</blockquote>
+          <div className="cvx-cell">
+            <blockquote className="cvx-quote">{row.text}</blockquote>
+            {row.figure && <InlineFigure name={row.figure} />}
+          </div>
         </div>
       ) : (
         <div key={`row-${index}`} className="cvx-row">
@@ -486,6 +502,7 @@ const renderBlocks = (blocks: Block[]) => (
                 </p>
               ),
             )}
+            {row.figure && <InlineFigure name={row.figure} />}
           </div>
         </div>
       ),
@@ -1037,6 +1054,29 @@ const AfterFigure = () => {
   );
 };
 
+/** 이름 → 그림. 좁은 화면에서 본문 행 아래에 끼워 넣을 때 쓴다 */
+const INLINE_FIGURES: Record<InlineFigureName, () => JSX.Element> = {
+  pipeline: PipelineFigure,
+  landscape: LandscapeFigure,
+  mapping: MappingFigure,
+  signal: SignalFigure,
+  live: LiveIrFigure,
+  roadmap: RoadmapFigure,
+  validation: ValidationFigure,
+  impact: ImpactFigure,
+  after: AfterFigure,
+};
+
+/** 좁은 화면 전용(넓은 화면에서는 CSS로 숨김). 소제목 없이 본문과 1:1로 붙는다 */
+const InlineFigure = ({ name }: { name: InlineFigureName }) => {
+  const Figure = INLINE_FIGURES[name];
+  return (
+    <div className="cvx-inline-fig" aria-hidden>
+      <Figure />
+    </div>
+  );
+};
+
 const MethodologyFigures = () => (
   <aside className="cvx-figures" aria-label="시각자료">
     <figure className="cvx-figure">
@@ -1202,7 +1242,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
       return (
         <Slide num={meta?.num ?? null} title="주요 연구 관심 분야" bodyClassName="cvx-body--figure">
           <ul className="cvx-list">
-            {researchInterests.map((item) => (
+            {researchInterests.map((item, i) => (
               <li key={item.title} className="cvx-list-row">
                 <div className="cvx-list-rail">
                   <i className="cvx-dot" aria-hidden />
@@ -1210,6 +1250,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
                 <div className="cvx-list-main">
                   <h3 className="cvx-list-title">{item.title}</h3>
                   <p className="cvx-list-body">{item.body}</p>
+                  <InlineFigure name={(['mapping', 'signal', 'live'] as const)[i]} />
                 </div>
               </li>
             ))}
@@ -1222,7 +1263,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
       return (
         <Slide num={meta?.num ?? null} title="연구 계획 및 방법론" bodyClassName="cvx-body--figure">
           <ol className="cvx-list cvx-list--steps">
-            {researchStages.map((stage) => (
+            {researchStages.map((stage, i) => (
               <li key={stage.step} className="cvx-list-row">
                 <div className="cvx-list-rail">
                   <span className="cvx-step-num">{stage.step}</span>
@@ -1230,6 +1271,8 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
                 <div className="cvx-list-main">
                   <h3 className="cvx-list-title">{stage.title}</h3>
                   <p className="cvx-list-body">{stage.body}</p>
+                  {i === 0 && <InlineFigure name="roadmap" />}
+                  {i === 2 && <InlineFigure name="validation" />}
                 </div>
               </li>
             ))}
@@ -2312,10 +2355,27 @@ const ContactPage = () => {
         }
 
         /* 좁은 폭: 그림을 본문 아래로 내리고 두 장을 나란히 */
+        /* 인라인 그림: 넓은 화면에서는 오른쪽 열이 대신하므로 숨긴다 */
+        .cvx-inline-fig { display: none; }
+
         @container cvstage (inline-size < 45rem) {
           .cvx-body--figure > .cvx-table,
           .cvx-body--figure > .cvx-list,
           .cvx-figures { grid-column: 1 / -1; }
+
+          /* 좁은 화면: 그림 열을 접고, 글 바로 아래에 짝이 되는 그림을 1:1로 */
+          .cvx-figures { display: none; }
+          .cvx-inline-fig {
+            display: block;
+            margin-block-start: var(--s2);
+            max-inline-size: 26rem;
+          }
+          .cvx-inline-fig svg {
+            display: block;
+            inline-size: 100%;
+            block-size: auto;
+            font-family: inherit;
+          }
           .cvx-figures {
             position: static;
             grid-template-columns: repeat(2, minmax(0, 1fr));
