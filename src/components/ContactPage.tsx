@@ -366,6 +366,10 @@ const ENTER_OFFSET = 32;
 const EXIT_TAIL = 48;
 /** 드래그 방향을 확정하기 전 허용 오차(px) — 탭과 드래그를 가른다 */
 const DRAG_HYSTERESIS = 10;
+/** 터치에서 위아래 끌기로 섹션을 넘길지. 발표용 CV는 좌우 스와이프만 쓴다(위아래는 안쪽 스크롤 전용) */
+const TOUCH_VERTICAL_PAGING = false;
+/** 좌우 스와이프 커밋 거리(px) — 스테이지 폭의 일부와 최소값 중 큰 쪽 */
+const hswipeCommitFor = (stageWidth: number) => Math.max(48, stageWidth * 0.12);
 /** 이 속도(px/s) 이상이면 위치가 아니라 속도의 부호로 커밋을 판정한다 */
 const FLICK_VELOCITY = 260;
 /** 휠 한 제스처의 누적 임계치와, 제스처가 끝났다고 보는 이벤트 간격 */
@@ -406,7 +410,7 @@ type Gesture = {
   startY: number;
   /** 드래그로 확정된 지점 — 여기서부터 1:1로 따라간다(잡은 위치 존중) */
   grabY: number;
-  mode: 'undecided' | 'drag' | 'native';
+  mode: 'undecided' | 'drag' | 'native' | 'hswipe';
   dir: 1 | -1;
   history: { y: number; t: number }[];
   commit: number;
@@ -1653,7 +1657,7 @@ const ContactPage = () => {
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!g || g.mode === 'native') return;
+      if (!g || g.mode === 'native' || g.mode === 'hswipe') return;
       const t = findTouch(event, g.id);
       if (!t) return;
 
@@ -1662,7 +1666,11 @@ const ContactPage = () => {
         const dy = t.clientY - g.startY;
         if (Math.hypot(dx, dy) < DRAG_HYSTERESIS) return;
         if (Math.abs(dx) > Math.abs(dy)) {
-          g.mode = 'native';
+          g.mode = 'hswipe'; // 좌우: 놓을 때 거리로 다음/이전 판정
+          return;
+        }
+        if (!TOUCH_VERTICAL_PAGING) {
+          g.mode = 'native'; // 위아래: 섹션 전환 없이 안쪽 스크롤만
           return;
         }
         const dir: 1 | -1 = dy < 0 ? 1 : -1;
@@ -1687,6 +1695,13 @@ const ContactPage = () => {
       const gesture = g;
       g = null;
       gestureRef.current = null;
+      if (gesture.mode === 'hswipe') {
+        if (cancelled) return;
+        const dx = t.clientX - gesture.startX;
+        if (Math.abs(dx) < hswipeCommitFor(stage.clientWidth)) return;
+        navigate(activeIndexRef.current + (dx < 0 ? 1 : -1));
+        return;
+      }
       if (gesture.mode !== 'drag') return;
 
       delete stage.dataset.dragging;
