@@ -594,7 +594,7 @@ const projectsRaw: Project[] = [
     title: "Q6",
     category: "TVCF",
     video: videoQ6,
-    videoStart: 5,
+    videoStart: 8,
     thumbnail: thumbQ6,
     keywords: ["Q6", "제품 광고", "TVCF", "매트페인팅", "클린업", "그래픽 합성"],
     description: "Q6 제품 광고\n\nQ6 제품 TVCF. 기술과 성능을 시각적으로 전하면서 타겟에 맞는 메시지와 비주얼 임팩트를 동시에 잡아야 했다.\n\n2D Artist로 매트 페인팅과 클린업, 실사·그래픽 합성을 맡았다. 제품 포인트가 먼저 보이도록 완성도를 맞췄다.",
