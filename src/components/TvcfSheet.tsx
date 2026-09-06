@@ -14,6 +14,10 @@ interface TvcfSheetProps {
   url: string;
   title: string;
   onClose: () => void;
+  /** 제목 옆 작은 꼬리표. 기본 TVCF */
+  kicker?: string;
+  /** iframe 삽입을 막는 사이트는 캡처 이미지를 대신 보여준다 */
+  image?: string;
 }
 
 /* Apple의 시트 규격(damping 0.8 · response 0.3)에 가깝게.
@@ -38,7 +42,7 @@ const viewportH = () => (typeof window === 'undefined' ? 900 : window.innerHeigh
  * · 헤더를 잡고 1:1로 끌 수 있고, 놓는 순간의 속도가 스프링으로 이어진다
  * · 스크림은 시트 위치에 따라 같이 옅어진다(진행 중 피드백)
  */
-const TvcfSheet = ({ open, url, title, onClose }: TvcfSheetProps) => {
+const TvcfSheet = ({ open, url, title, onClose, kicker = 'TVCF', image }: TvcfSheetProps) => {
   const reduceMotion = useReducedMotion() ?? false;
   const y = useMotionValue(0);
   const [vh, setVh] = useState(viewportH);
@@ -298,6 +302,35 @@ const TvcfSheet = ({ open, url, title, onClose }: TvcfSheetProps) => {
 
             .tvcf-sheet-body[data-dragging='true'] .tvcf-sheet-frame { pointer-events: none; }
 
+            /* 삽입 불가 사이트의 정지 화면 */
+            .tvcf-sheet-still {
+              position: absolute;
+              inset: 0;
+              overflow: auto;
+              background: #f4f5f7;
+            }
+
+            .tvcf-sheet-still img {
+              display: block;
+              inline-size: min(100%, 1280px);
+              margin-inline: auto;
+              box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+            }
+
+            .tvcf-sheet-still-note {
+              margin: 0;
+              padding: 0.9rem 1.25rem 1.5rem;
+              text-align: center;
+              font-size: 0.85rem;
+              color: var(--ink-3);
+            }
+
+            .tvcf-sheet-still-note a {
+              color: var(--ink);
+              text-decoration: none;
+              border-block-end: 1px solid currentColor;
+            }
+
             /* 로드 전 상태 — 무엇이 오는지 말해 준다 */
             .tvcf-sheet-loading {
               position: absolute;
@@ -381,7 +414,7 @@ const TvcfSheet = ({ open, url, title, onClose }: TvcfSheetProps) => {
               <i className="tvcf-grabber" aria-hidden />
               <h2 className="tvcf-sheet-title">
                 {title}
-                <small>TVCF</small>
+                <small>{kicker}</small>
               </h2>
               <a
                 className="tvcf-sheet-link"
@@ -407,21 +440,34 @@ const TvcfSheet = ({ open, url, title, onClose }: TvcfSheetProps) => {
             </div>
 
             <div className="tvcf-sheet-body" data-dragging={dragging ? 'true' : undefined}>
-              {!loaded && (
-                <div className="tvcf-sheet-loading" aria-live="polite">
-                  <strong>{title}</strong>
-                  <span>TVCF 포트폴리오를 불러오는 중…</span>
+              {image ? (
+                /* 삽입이 막힌 사이트: 캡처 이미지 + 새 탭 안내 */
+                <div className="tvcf-sheet-still">
+                  <img src={image} alt={title} draggable={false} />
+                  <p className="tvcf-sheet-still-note">
+                    이 사이트는 페이지 안에 띄울 수 없어 캡처 화면을 보여줍니다.{' '}
+                    <a href={url} target="_blank" rel="noopener noreferrer">새 탭에서 열기 ↗</a>
+                  </p>
                 </div>
+              ) : (
+                <>
+                  {!loaded && (
+                    <div className="tvcf-sheet-loading" aria-live="polite">
+                      <strong>{title}</strong>
+                      <span>{kicker === 'TVCF' ? 'TVCF 포트폴리오를 불러오는 중…' : '페이지를 불러오는 중…'}</span>
+                    </div>
+                  )}
+                  <iframe
+                    className="tvcf-sheet-frame"
+                    src={url}
+                    title={title}
+                    loading="eager"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="fullscreen; autoplay"
+                    onLoad={() => setLoaded(true)}
+                  />
+                </>
               )}
-              <iframe
-                className="tvcf-sheet-frame"
-                src={url}
-                title={title}
-                loading="eager"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allow="fullscreen; autoplay"
-                onLoad={() => setLoaded(true)}
-              />
             </div>
           </motion.div>
         </div>

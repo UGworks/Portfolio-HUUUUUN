@@ -1,5 +1,7 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -34,7 +36,35 @@ import previewLida from '../IMG/site-previews/lida.webp';
 /** 마우스를 올리면 뜨는 미리보기.
     · 웹사이트: url(새 탭) + preview(캡처 이미지)
     · 포트폴리오 작품: video(자동 재생) 또는 preview(정지 이미지) + label(작품명) */
-type SitePreview = { url?: string; preview?: string; video?: string; label?: string };
+type SitePreview = {
+  url?: string;
+  preview?: string;
+  video?: string;
+  label?: string;
+  /** false면 iframe 삽입을 막는 사이트 → 시트에 캡처 이미지를 띄운다 */
+  embed?: boolean;
+  /** 시트 제목 옆 꼬리표. 기본 '웹사이트' */
+  kicker?: string;
+};
+
+/** 페이지 위 시트로 여는 내용. 컨텍스트로 어디서든 연다 */
+type SheetContent = { url: string; title: string; kicker?: string; image?: string };
+const OpenSheetContext = createContext<(content: SheetContent) => void>(() => {});
+
+/** 사이트 링크는 새 탭 대신 시트로. 삽입이 막힌 곳은 캡처 이미지로 */
+const useOpenSite = () => {
+  const open = useContext(OpenSheetContext);
+  return (site: SitePreview | undefined, title?: string, kicker?: string) => {
+    if (!site?.url) return;
+    trackOutboundClick(`sheet_${siteHost(site.url)}`, site.url);
+    open({
+      url: site.url,
+      title: title ?? site.label ?? siteHost(site.url),
+      kicker: kicker ?? site.kicker ?? '웹사이트',
+      image: site.embed === false ? site.preview : undefined,
+    });
+  };
+};
 
 /** 포트폴리오 작품을 미리보기로. 영상이 있으면 영상, 없으면 썸네일 */
 const projectPeek = (id: string): SitePreview | undefined => {
@@ -44,16 +74,16 @@ const projectPeek = (id: string): SitePreview | undefined => {
 };
 
 const SITE = {
-  libratum: { url: 'https://libratuminvestment.com/', preview: previewLibratum },
-  openexc: { url: 'https://openexc.com/', preview: previewOpenexc },
-  concentrix: { url: 'https://kr.concentrix.com/', preview: previewConcentrix },
-  vixen: { url: 'http://www.vixenvfxstudio.com/kr/', preview: previewVixen },
-  sillok: { url: 'https://www.riss.kr/link?id=T13413899', preview: previewSillok },
-  tufte: { url: 'https://www.edwardtufte.com/book/the-visual-display-of-quantitative-information/', preview: previewTufte },
-  eyes: { url: 'https://ieeexplore.ieee.org/document/545307', preview: previewEyes },
-  narrative: { url: 'https://idl.cs.washington.edu/papers/narrative/', preview: previewNarrative },
-  data2vis: { url: 'https://arxiv.org/abs/1804.03126', preview: previewData2vis },
-  lida: { url: 'https://microsoft.github.io/lida/', preview: previewLida },
+  libratum: { url: 'https://libratuminvestment.com/', preview: previewLibratum, label: 'Libratum Investment' },
+  openexc: { url: 'https://openexc.com/', preview: previewOpenexc, label: 'OpenExchange' },
+  concentrix: { url: 'https://kr.concentrix.com/', preview: previewConcentrix, label: 'Concentrix Korea', embed: false },
+  vixen: { url: 'http://www.vixenvfxstudio.com/kr/', preview: previewVixen, label: 'VIXEN VFX Studio' },
+  sillok: { url: 'https://www.riss.kr/link?id=T13413899', preview: previewSillok, label: '조선왕조실록 인물중심 데이터 시각화 (박진완 지도, 2014)', kicker: '참고 자료' },
+  tufte: { url: 'https://www.edwardtufte.com/book/the-visual-display-of-quantitative-information/', preview: previewTufte, label: 'Tufte · The Visual Display of Quantitative Information', kicker: '참고 자료' },
+  eyes: { url: 'https://ieeexplore.ieee.org/document/545307', preview: previewEyes, label: 'Shneiderman · The Eyes Have It', kicker: '참고 자료' },
+  narrative: { url: 'https://idl.cs.washington.edu/papers/narrative/', preview: previewNarrative, label: 'Segel & Heer · Narrative Visualization', kicker: '참고 자료' },
+  data2vis: { url: 'https://arxiv.org/abs/1804.03126', preview: previewData2vis, label: 'Data2Vis (arXiv)', embed: false, kicker: '참고 자료' },
+  lida: { url: 'https://microsoft.github.io/lida/', preview: previewLida, label: 'LIDA · Microsoft', kicker: '참고 자료' },
 } satisfies Record<string, SitePreview>;
 
 const PROGRAM = '중앙대학교 첨단영상대학원 예술공학 전공 · 석사과정';
@@ -586,17 +616,20 @@ const FactRow = ({ item }: { item: FactItem }) => {
   const text = factText(item);
   const site = typeof item === 'string' ? undefined : item.site;
   const { handlers, popup } = useSitePeek(site);
+  const openSite = useOpenSite();
   return (
     <li className={site ? 'has-site' : undefined} {...handlers}>
       {renderEmphasis(text)}
       {site?.url && (
         <a
           href={site.url}
-          target="_blank"
-          rel="noopener noreferrer"
           className="cvx-fact-link"
-          aria-label={`${siteHost(site.url)} 새 탭에서 열기`}
-          onClick={() => trackOutboundClick(`ref_${siteHost(site.url!)}`, site.url!)}
+          aria-label={`${site.label ?? siteHost(site.url)} 열기`}
+          aria-haspopup="dialog"
+          onClick={(e) => {
+            e.preventDefault();
+            openSite(site);
+          }}
         >
           ↗
         </a>
@@ -692,12 +725,13 @@ const Quad = ({
   site?: SitePreview;
 }) => {
   const { handlers, popup } = useSitePeek(site);
+  const openSite = useOpenSite();
   return (
     <>
     <g
       transform={`translate(${x} ${y})`}
       {...handlers}
-      onClick={site?.url ? () => { trackOutboundClick(`ref_${siteHost(site.url!)}`, site.url!); window.open(site.url, '_blank', 'noopener'); } : undefined}
+      onClick={site?.url ? () => openSite(site) : undefined}
       style={site?.url ? { cursor: 'pointer' } : undefined}
     >
       <rect x="0.5" y="0.5" width="139" height="47" rx="8" fill={accent ? FIG_INK : 'none'} stroke={accent ? FIG_INK : FIG_RULE} />
@@ -1041,7 +1075,7 @@ const MotivationFigures = () => (
 const JobCard = ({ job }: { job: ExperienceEntry }) => {
   const site = job.site;
   const { handlers, popup } = useSitePeek(site);
-  const host = site?.url ? siteHost(site.url) : '';
+  const openSite = useOpenSite();
 
   return (
     <article
@@ -1055,10 +1089,12 @@ const JobCard = ({ job }: { job: ExperienceEntry }) => {
             {site?.url ? (
               <a
                 href={site.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="cvx-job-title-link"
-                onClick={() => trackOutboundClick(`career_${host}`, site.url!)}
+                aria-haspopup="dialog"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openSite(site, job.company);
+                }}
               >
                 {job.company}
                 <span className="cvx-job-title-arrow" aria-hidden>↗</span>
@@ -1260,15 +1296,21 @@ const ContactPage = () => {
   const stageRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
-  /* TVCF 포트폴리오는 페이지를 떠나지 않고 시트로 연다 */
+  /* 외부 링크는 페이지를 떠나지 않고 시트로 연다(TVCF 포함).
+     닫힐 때 내용은 남겨 두어 나가는 애니메이션 동안 빈 시트가 되지 않게 한다 */
+  const [sheet, setSheet] = useState<SheetContent | null>(null);
   const [tvcfOpen, setTvcfOpen] = useState(false);
   const tvcfOpenRef = useRef(false);
   tvcfOpenRef.current = tvcfOpen;
+  const openSheet = useCallback((content: SheetContent) => {
+    setSheet(content);
+    setTvcfOpen(true);
+  }, []);
   const openTvcf = useCallback(() => {
     if (!portfolioUrl) return;
     trackOutboundClick('tvcf_site', portfolioUrl);
-    setTvcfOpen(true);
-  }, [portfolioUrl]);
+    openSheet({ url: portfolioUrl, title: 'HUUUUU.N 포트폴리오', kicker: 'TVCF' });
+  }, [portfolioUrl, openSheet]);
   const closeTvcf = useCallback(() => setTvcfOpen(false), []);
 
   /* 화면에 올라오는 슬라이드 = 활성 슬라이드 + (드래그 중이면) 옆에서 비치는 슬라이드.
@@ -1706,6 +1748,7 @@ const ContactPage = () => {
   if (peek) layers.push({ id: CV_NAV[peek.index].id, role: 'peek' });
 
   return (
+    <OpenSheetContext.Provider value={openSheet}>
     <motion.div
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -2997,8 +3040,15 @@ const ContactPage = () => {
         </div>
       </div>
 
-      {portfolioUrl && (
-        <TvcfSheet open={tvcfOpen} url={portfolioUrl} title="HUUUUU.N 포트폴리오" onClose={closeTvcf} />
+      {sheet && (
+        <TvcfSheet
+          open={tvcfOpen}
+          url={sheet.url}
+          title={sheet.title}
+          kicker={sheet.kicker}
+          image={sheet.image}
+          onClose={closeTvcf}
+        />
       )}
 
       {/* 인쇄용 전체 본문 */}
@@ -3016,6 +3066,7 @@ const ContactPage = () => {
         ))}
       </div>
     </motion.div>
+    </OpenSheetContext.Provider>
   );
 };
 

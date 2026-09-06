@@ -1,9 +1,10 @@
-import { Fragment } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { motion, AnimatePresence, type Transition } from 'framer-motion';
 import { info } from '../data';
 import { Project } from '../types';
 import { ease, useMotionPrefs } from '../motion';
 import { trackOutboundClick } from '../analytics';
+import TvcfSheet from './TvcfSheet';
 
 interface GeneralInfoPanelProps {
   activeProject: Project | null;
@@ -38,6 +39,15 @@ const GeneralInfoPanel = ({
   // 참여도는 모든 작품에 표시한다.
   // data.ts에 값이 있는 작품은 그 값을, 나머지는 기본값 85를 쓴다.
   const participation = activeProject?.participation ?? 85;
+  /* 링크 버튼은 새 탭 대신 페이지 위 시트로. 닫힐 때 내용은 남겨 나가는 애니메이션이 비지 않게 */
+  const [sheet, setSheet] = useState<{ url: string; title: string; kicker: string } | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const openSheet = useCallback((url: string, title: string, kicker: string) => {
+    setSheet({ url, title, kicker });
+    setSheetOpen(true);
+  }, []);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+
   const [lead, ...paragraphs] = (activeProject?.description ?? '')
     .split('\n\n')
     .map((p) => p.trim())
@@ -491,9 +501,17 @@ const GeneralInfoPanel = ({
                     <a
                       href={activeProject.link}
                       className="gip-btn"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackOutboundClick(`project_${activeProject.id}`, activeProject.link!)}
+                      aria-haspopup="dialog"
+                      aria-expanded={sheetOpen}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        trackOutboundClick(`project_${activeProject.id}`, activeProject.link!);
+                        openSheet(
+                          activeProject.link!,
+                          activeProject.title,
+                          activeProject.linkLabel === '관련 뉴스 보기' ? '뉴스' : '웹사이트',
+                        );
+                      }}
                     >
                       {activeProject.linkLabel ?? '사이트 열기'}
                       <span className="gip-btn-arrow" aria-hidden>↗</span>
@@ -557,6 +575,15 @@ const GeneralInfoPanel = ({
           </motion.section>
         )}
       </AnimatePresence>
+      {sheet && (
+        <TvcfSheet
+          open={sheetOpen}
+          url={sheet.url}
+          title={sheet.title}
+          kicker={sheet.kicker}
+          onClose={closeSheet}
+        />
+      )}
     </motion.div>
   );
 };
