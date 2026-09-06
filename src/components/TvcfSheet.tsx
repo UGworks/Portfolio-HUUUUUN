@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AnimatePresence,
   animate,
@@ -155,7 +156,8 @@ const TvcfSheet = ({ open, url, title, onClose, kicker = 'TVCF', image }: TvcfSh
     }),
   };
 
-  return (
+  /* 시트는 body에 그린다 — 고정·transform이 걸린 패널 안에서 열면 그 패널 크기로 갇혀 보이지 않는다 */
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div className="tvcf-sheet-root" role="presentation">
@@ -472,7 +474,8 @@ const TvcfSheet = ({ open, url, title, onClose, kicker = 'TVCF', image }: TvcfSh
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };
 
