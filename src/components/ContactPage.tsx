@@ -99,10 +99,10 @@ export const CONTACT = { phone: PHONE, email: EMAIL } as const;
  */
 const CV_NAV = [
   { id: 'cv-intro', label: '개요', num: null },
-  { id: 'cv-motivation', label: '진학 동기 및 배경', num: '01' },
-  { id: 'cv-interests', label: '주요 연구 관심 분야', num: '02' },
-  { id: 'cv-methodology', label: '연구 계획 및 방법론', num: '03' },
-  { id: 'cv-outlook', label: '기대 효과 및 졸업 후 계획', num: '04' },
+  { id: 'cv-motivation', label: '작업 배경', num: '01' },
+  { id: 'cv-interests', label: '생성형 AI 활용 관점', num: '02' },
+  { id: 'cv-methodology', label: '제작 방식과 워크플로', num: '03' },
+  { id: 'cv-outlook', label: '향후 작업 방향', num: '04' },
   { id: 'cv-experience', label: '경력', num: null },
   { id: 'cv-skills', label: '자격증 및 기술', num: null },
 ] as const;
@@ -159,95 +159,94 @@ type Block =
   | { kind: 'p'; text: string };
 
 const MOTIVATION_BLOCKS: Block[] = [
-  { kind: 'sub', text: '실무 배경' },
+  { kind: 'sub', text: '이미지를 다뤄 온 방식' },
   {
     kind: 'facts',
     items: [
-      { text: '포스트프로덕션·웹 에이전시 실무 13년', site: SITE.vixen },
-      { text: '현재 사모펀드(PEF) 운용사 리브라텀 파트너스 크리에이티브 디렉터', site: SITE.libratum },
-      { text: '오픈익스체인지 등과 함께 IR 콘텐츠의 시각 시스템 총괄', site: SITE.openexc },
+      { text: '포스트프로덕션에서 TVCF·뮤직비디오·브랜드 영상의 합성과 모션그래픽 제작', site: SITE.vixen },
+      { text: '글로벌 웹 UI·UX 환경에서 제품 기능과 사용자 경험을 움직이는 이미지로 설계', site: SITE.concentrix },
+      { text: '미디어파사드와 라이브 IR로 화면 밖 공간·현장·관람 경험까지 작업 영역 확장', site: projectPeek('67') },
     ],
   },
   {
     kind: 'quote',
-    text: '복잡한 텍스트 중심의 투심보고서,\n의사결정의 속도를 늦추는 정보 구조.\nAI 생성형 시각화로 이 병목을 푸는 것이\n본\u00A0연구의 출발점.',
-    source: '현장에서 마주한 문제의식',
+    text: '합성하고 편집하는 제작자에서,\n이미지의 생성 규칙과 경험 전체를 설계하는 창작자로.\n생성형 AI는 이 전환을 확장하는\n새로운 영상 재료.',
+    source: '작업의 출발점',
     figure: 'pipeline',
   },
-  { kind: 'sub', text: '연구로 잇는 지점', figure: 'landscape' },
+  { kind: 'sub', text: '포트폴리오의 네 축', figure: 'landscape' },
   {
     kind: 'facts',
     items: [
-      '목표: 텍스트 보고서를 AI 생성형 시각화로 재구성. 자본 시장의 의사결정 속도와 정확도를 높이는 시각 시스템',
-      { text: '선행 연구 ① **정보 미학**: 박진완 「조선왕조실록 시각화」. 방대한 기록을 관계망으로 재구성', site: SITE.sillok },
-      { text: '선행 연구 ② **시각화 이론**: Tufte 『The Visual Display of Quantitative Information』(1983), Shneiderman 「The Eyes Have It」(1996)', site: SITE.tufte },
-      { text: '선행 연구 ③ **서사적 시각화**: Segel & Heer 「Narrative Visualization: Telling Stories with Data」(2010)', site: SITE.narrative },
-      { text: '선행 연구 ④ **LLM 자동 시각화**: Data2Vis(2019) · Chat2VIS(2023) · LIDA(2023)', site: SITE.lida },
-      '접점: 위 원리를 투심보고서에 적용. 비정형 텍스트를 시각 위계와 서사로 재편하는 금융 시각 언어 정립',
+      '상업 영상: 촬영 소스를 합성·보정하고 브랜드 메시지를 완성하는 후반 제작',
+      '디지털 콘텐츠: 제품과 서비스의 복잡한 기능을 짧고 명확한 모션 언어로 전달',
+      '공간 영상: 조형물·LED·프로젝션과 영상의 물리적 관계를 설계',
+      '생성형 AI: 텍스트와 이미지를 출발점으로 장면·움직임·서사를 빠르게 탐색',
     ],
   },
 ];
 
 const researchInterests = [
   {
-    title: '금융 데이터의 시각 언어 변환 원리',
+    title: 'AI를 목적이 아닌 재료로 사용',
     body:
-      '딜소싱·시장 데이터 같은 비정형 금융 정보를 형태·색·움직임·시간 구조로 옮기는 매핑 규칙 연구. 어떤 규칙이 의미를 잃지 않고 전달하는지 밝히고, 생성 시스템으로 구현해 재현 가능성 확보.',
+      '특정 서비스의 화질이나 유행보다 작품의 개념과 맥락을 먼저 설정한다. AI를 써야만 가능한 이미지와 움직임이 무엇인지 묻고, 생성 결과를 작품을 구성하는 하나의 재료로 다룬다.',
   },
   {
-    title: 'AI 기반 투자 판단 지원 시각화',
+    title: '생성에서 연출로 이어지는 통제',
     body:
-      '방대한 리포트와 기업 서사에서 핵심 신호를 가려내는 시각화 모델 연구. 리스크 신호와 서사의 방향을 AI가 읽어 시각 위계로 배치하고, 정보를 찾는 데 드는 인지 부담을 줄이는 방식 탐구.',
+      '프롬프트와 레퍼런스로 장면을 탐색한 뒤 합성·편집·컬러·사운드로 결과를 다시 설계한다. 우연히 얻은 한 컷보다 여러 장면에 걸쳐 유지되는 시각 언어와 서사적 일관성을 중시한다.',
   },
   {
-    title: '데이터 기반 인터랙티브 IR 모델',
+    title: '화면에서 공간과 관람 경험으로',
     body:
-      '발표자의 전달에 기대는 기존 IR 영상에서 벗어나, 실시간 스트리밍 안에서 데이터가 스스로 변하며 정보를 전하는 체계 설계. 공간 미디어로의 확장 가능성 검토.',
+      '완성 영상을 단순 상영물에 머물게 하지 않고 공간·오브제·빛·관람 동선과 결합한다. 화면의 크기와 재생 장비, 관람자의 거리까지 영상의 일부로 보고 설치 작품으로 확장한다.',
   },
 ];
 
 const researchStages = [
   {
     step: '01',
-    title: '이론 정립과 정보 미학 프레임워크 설계',
+    title: '개념과 레퍼런스 설계',
     body:
-      '정량 데이터(재무제표·거시 지표)와 정성 데이터(뉴스레터·애널리스트 리포트)가 시각 기호로 바뀌는 방식 분석. 금융 정보 시각화의 미학적 기준 수립.',
+      '작업의 주제와 AI를 사용해야 하는 이유를 먼저 정리한다. 레퍼런스 조사와 이미지 생성 실험을 통해 공간, 오브제, 영상의 역할을 구체화하고 스토리보드로 발전시킨다.',
   },
   {
     step: '02',
-    title: 'AI 기반 생성형 시각화 시스템 구현',
+    title: '이미지·영상 생성과 후반 제작',
     body:
-      '수집한 데이터를 시각 서사로 자동 변환하는 프로토타입 개발. 데이터의 성격에 따라 화면 구성·색·움직임의 리듬을 맞추는 알고리즘 설계, 시각 균형과 정보 위계를 제어하는 방법 실험.',
+      'ChatGPT·Gemini로 기획을 정리하고 Midjourney 등으로 키 비주얼을 탐색한다. Runway·Kling·MiniMax 계열 영상 생성 결과를 기존 합성·편집 파이프라인과 결합해 장면의 연속성과 완성도를 높인다.',
   },
   {
     step: '03',
-    title: '실무 그룹 대상 정량·정성 검증',
+    title: '공간 적용과 반복 개선',
     body:
-      '투자 운용·심사 실무자 대상 검증. 텍스트 리포트와 자동 생성 영상을 견주는 A/B 테스트로 정보 습득 속도와 정확도 측정, 전문가 인터뷰로 딜소싱 과정의 설득력·신뢰도 변화 확인.',
+      '프로젝션·모니터·LED 등 실제 출력 환경에서 화면 크기, 동선, 조명, 재생 방식을 점검한다. 크리틱과 설치 테스트를 반복하며 영상·오브제·장비가 하나의 경험으로 읽히도록 보완한다.',
   },
 ];
 
 const OUTLOOK_BLOCKS: Block[] = [
-  { kind: 'sub', text: '기대 효과', figure: 'impact' },
+  { kind: 'sub', text: '두 가지 작품 구상', figure: 'impact' },
   {
     kind: 'facts',
     items: [
-      '예술공학으로 짓는 차세대 IR 시스템: 미적 완성도를 넘어 자본 시장의 정보 격차 완화',
-      '투자 생태계의 투명성을 높이는 사회적 가치',
+      '**방향 A**: 생성형 AI의 변형·우연성·비선형 서사를 공간과 오브제로 확장하는 설치 작품',
+      '**방향 B**: 구조물을 먼저 설계하고, 프로젝션 매핑 소스를 생성형 AI 비디오로 제작하는 방식',
+      '**초기 구현안**: 기존 미디어파사드 경험을 살릴 수 있는 방향 B로 완성도를 확보한 뒤 방향 A의 가능성을 결합',
     ],
   },
   {
     kind: 'quote',
-    text: '보조 도구를 넘어 의사결정의 핵심 인터페이스로.\n데이터 시각화의 위상 전환이 본\u00A0연구의 목표.',
-    source: '연구의 목표',
+    text: 'AI로 영상을 만드는 데서 끝내지 않고,\nAI로만 가능한 장면과 경험을 설계한다.',
+    source: '작업의 방향',
   },
-  { kind: 'sub', text: '졸업 후 계획', figure: 'after' },
+  { kind: 'sub', text: '학기 제작 로드맵', figure: 'after' },
   {
     kind: 'facts',
     items: [
-      '연구 성과를 바탕으로 PE 환경에 맞춘 B2B 시각화 솔루션 상용화',
-      '보수적 금융 생태계와 예술공학을 잇는 융합 전문가로 활동',
-      '데이터 시각화의 학문적 지평을 실물 경제로 확장',
+      '7주 차: 작품 아이디어와 스토리보드 중간발표',
+      '13주 차: 영상·오브제·장비를 포함한 작품 최종 완성',
+      '14주 차: 아트센터 2층 전시장 설치 및 관람 경험 검증',
     ],
   },
 ];
@@ -720,11 +719,11 @@ const PipelineFigure = () => {
   );
   return (
     <svg viewBox="0 0 320 288" role="img" aria-label="연구 파이프라인: 텍스트 보고서에서 AI 생성형 시각화를 거쳐 의사결정으로">
-      {node(0, '텍스트 중심 투심보고서', '비정형 · 고밀도 · 선형 읽기', textIcon)}
-      {arrow(74, 'AI 생성형 시각화')}
-      {node(107, '시각 위계 · 데이터 서사', '형태 · 색 · 움직임 · 시간 구조', visIcon, true)}
-      {arrow(181, '판단 지원')}
-      {node(214, '투자 의사결정', '속도 · 정확도 ↑ / 인지 부담 ↓', decideIcon)}
+      {node(0, '개념 · 텍스트 · 레퍼런스', '작업의 질문과 시각 방향 설정', textIcon)}
+      {arrow(74, '생성형 AI 탐색')}
+      {node(107, '장면 · 움직임 · 서사', '이미지 생성 · 영상화 · 변주', visIcon, true)}
+      {arrow(181, '후반 제작')}
+      {node(214, '영상 · 공간 경험', '합성 · 편집 · 매핑 · 설치', decideIcon)}
     </svg>
   );
 };
@@ -774,16 +773,16 @@ const Quad = ({
 
 const LandscapeFigure = () => {
   return (
-    <svg viewBox="0 0 320 138" role="img" aria-label="선행 연구 지형도: 규칙과 서사, 수동 설계와 자동 생성의 두 축에서 본 연구의 위치">
-      <text x="102" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">규칙 · 구조</text>
-      <text x="250" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">서사 · 미학</text>
-      <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 44) rotate(-90)">수동 설계</text>
-      <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 110) rotate(-90)">자동 생성</text>
+    <svg viewBox="0 0 320 138" role="img" aria-label="상업 영상, 디지털 콘텐츠, 공간 영상에서 생성형 AI 설치 작품으로 확장되는 작업 영역">
+      <text x="102" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">평면 · 화면</text>
+      <text x="250" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">공간 · 경험</text>
+      <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 44) rotate(-90)">기존 제작</text>
+      <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 110) rotate(-90)">생성 확장</text>
       <g transform="translate(32 20)">
-        <Quad x={0} y={0} title="정보 시각화 이론" site={SITE.eyes} />
-        <Quad x={148} y={0} title="정보 미학 · 서사" site={SITE.narrative} />
-        <Quad x={0} y={66} title="LLM 자동 시각화" site={SITE.data2vis} />
-        <Quad x={148} y={66} title="본 연구" sub="시각적 서사 × 자동 생성" accent />
+        <Quad x={0} y={0} title="상업 영상 · 웹 콘텐츠" />
+        <Quad x={148} y={0} title="미디어파사드" />
+        <Quad x={0} y={66} title="AI 이미지 · 영상" />
+        <Quad x={148} y={66} title="이번 작업" sub="생성형 AI × 설치" accent />
         <g fill="none" stroke={FIG_NOW} strokeWidth="1.2" strokeDasharray="3 3">
           <path d="M140 48 L148 66" />
           <path d="M218 48 L218 66" />
@@ -797,13 +796,13 @@ const LandscapeFigure = () => {
 
 /** 그림 3 — 데이터 유형 → 시각 변수 매핑(이분 그래프) */
 const MappingFigure = () => {
-  const left = ['딜소싱', '시장 데이터', '리포트 서사'];
+  const left = ['텍스트 프롬프트', '레퍼런스 이미지', '실사 소스'];
   const right = ['형태', '색', '움직임', '시간'];
   const ly = (i: number) => 22 + i * 30;
   const ry = (i: number) => 12 + i * 22;
   const edges: [number, number][] = [[0, 0], [0, 3], [1, 1], [1, 2], [2, 0], [2, 3]];
   return (
-    <svg viewBox="0 0 320 100" role="img" aria-label="비정형 금융 데이터를 형태·색·움직임·시간의 시각 변수로 옮기는 매핑 규칙">
+    <svg viewBox="0 0 320 100" role="img" aria-label="프롬프트와 이미지 소스를 형태·색·움직임·시간의 영상 요소로 전환하는 과정">
       <g stroke={FIG_RULE} strokeWidth="1">
         {edges.map(([a, b]) => (
           <path key={`${a}-${b}`} d={`M118 ${ly(a)} C 170 ${ly(a)}, 190 ${ry(b)}, 236 ${ry(b)}`} fill="none" />
@@ -823,7 +822,7 @@ const MappingFigure = () => {
           <text x="248" y={ry(i) + 4} fontSize="11" fontWeight={i === 2 ? 600 : 400} fill={FIG_INK}>{t}</text>
         </g>
       ))}
-      <text x="177" y="96" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">매핑 규칙</text>
+      <text x="177" y="96" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">생성·연출 규칙</text>
     </svg>
   );
 };
@@ -833,7 +832,7 @@ const SignalFigure = () => {
   const lines = [44, 40, 46, 30, 42, 38, 46, 34, 40, 28];
   const hot = new Set([2, 6]);
   return (
-    <svg viewBox="0 0 320 100" role="img" aria-label="리포트 텍스트에서 AI가 핵심 신호를 가려내 시각 위계로 배치">
+    <svg viewBox="0 0 320 100" role="img" aria-label="다양한 생성 결과에서 핵심 이미지를 선별해 장면의 위계와 서사를 구성">
       <rect x="0.5" y="0.5" width="96" height="99" rx="6" fill="none" stroke={FIG_RULE} />
       <g strokeWidth="2" strokeLinecap="round">
         {lines.map((w, i) => (
@@ -842,19 +841,19 @@ const SignalFigure = () => {
       </g>
       <g transform="translate(112 34)">
         <path d="M0 0 L40 0 L28 20 L28 34 L12 34 L12 20 Z" fill="none" stroke={FIG_INK} strokeWidth="1.2" strokeLinejoin="round" />
-        <text x="20" y="-8" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">AI 선별</text>
+        <text x="20" y="-8" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">선별 · 편집</text>
       </g>
       <line x1="156" y1="50" x2="176" y2="50" stroke={FIG_NOW} strokeWidth="1.5" />
       <polygon points="174,45 182,50 174,55" fill={FIG_NOW} />
       <g transform="translate(192 0)">
         <rect x="0.5" y="0.5" width="127" height="40" rx="4" fill={FIG_INK} />
-        <text x="10" y="18" fontSize="10.5" fontWeight="600" fill="var(--paper)">리스크 신호</text>
-        <text x="10" y="32" fontSize="9" fill="var(--paper)">가장 크게 · 먼저</text>
+        <text x="10" y="18" fontSize="10.5" fontWeight="600" fill="var(--paper)">핵심 장면</text>
+        <text x="10" y="32" fontSize="9" fill="var(--paper)">가장 강하게 · 먼저</text>
         <rect x="0.5" y="48.5" width="80" height="22" rx="4" fill="none" stroke={FIG_INK} />
-        <text x="10" y="63" fontSize="10" fill={FIG_INK}>서사의 방향</text>
+        <text x="10" y="63" fontSize="10" fill={FIG_INK}>장면의 연결</text>
         <rect x="0.5" y="78.5" width="48" height="16" rx="4" fill="none" stroke={FIG_RULE} />
-        <text x="8" y="90" fontSize="9" fill={FIG_MUTE}>맥락</text>
-        <text x="127" y="92" fontSize="9.5" fill={FIG_MUTE} textAnchor="end" letterSpacing="0.06em">시각 위계</text>
+        <text x="8" y="90" fontSize="9" fill={FIG_MUTE}>질감</text>
+        <text x="127" y="92" fontSize="9.5" fill={FIG_MUTE} textAnchor="end" letterSpacing="0.06em">시각 일관성</text>
       </g>
     </svg>
   );
@@ -867,7 +866,7 @@ const LiveIrFigure = () => (
       <rect x="0.5" y="0.5" width="118" height="70" rx="6" fill="none" stroke={FIG_RULE} />
       <circle cx="59" cy="26" r="10" fill="none" stroke={FIG_MUTE} strokeWidth="1.2" />
       <path d="M38 62 C 38 44, 80 44, 80 62" fill="none" stroke={FIG_MUTE} strokeWidth="1.2" />
-      <text x="59" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">발표자 중심</text>
+      <text x="59" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">평면 영상</text>
     </g>
     <line x1="134" y1="41" x2="154" y2="41" stroke={FIG_NOW} strokeWidth="1.5" />
     <polygon points="152,36 160,41 152,46" fill={FIG_NOW} />
@@ -882,8 +881,8 @@ const LiveIrFigure = () => (
         ))}
       </g>
       <circle cx="14" cy="14" r="3" fill={FIG_NOW} />
-      <text x="22" y="17.5" fontSize="9" fontWeight="600" fill={FIG_NOW} letterSpacing="0.08em">LIVE</text>
-      <text x="74" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">데이터 중심 · 실시간</text>
+      <text x="22" y="17.5" fontSize="9" fontWeight="600" fill={FIG_NOW} letterSpacing="0.08em">SPACE</text>
+      <text x="74" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">공간 · 오브제 · 관람</text>
     </g>
   </svg>
 );
@@ -891,15 +890,15 @@ const LiveIrFigure = () => (
 const InterestFigures = () => (
   <aside className="cvx-figures" aria-label="시각자료">
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">시각 변수 매핑</p>
+      <p className="cvx-figure-title">소스에서 영상 언어로</p>
       <MappingFigure />
     </figure>
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">신호 선별과 시각 위계</p>
+      <p className="cvx-figure-title">생성 결과의 선별과 연출</p>
       <SignalFigure />
     </figure>
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">실시간 IR 모델</p>
+      <p className="cvx-figure-title">화면에서 공간으로</p>
       <LiveIrFigure />
     </figure>
   </aside>
@@ -922,36 +921,36 @@ const RoadmapFigure = () => {
     </g>
   );
   return (
-    <svg viewBox="0 0 320 252" role="img" aria-label="연구 로드맵: 정량·정성 데이터 입력, 이론 정립, 시스템 구현, 실무 검증">
+    <svg viewBox="0 0 320 252" role="img" aria-label="제작 로드맵: 개념과 레퍼런스에서 생성형 AI 제작과 공간 테스트로 이어지는 과정">
       {/* 입력: 정량 + 정성 */}
       <g>
         <rect x="0.5" y="0.5" width="154" height="34" rx="6" fill="none" stroke={FIG_RULE} strokeDasharray="3 3" />
-        <text x="12" y="15" fontSize="10.5" fontWeight="600" fill={FIG_INK}>정량 데이터</text>
-        <text x="12" y="28" fontSize="9.5" fill={FIG_MUTE}>재무제표 · 거시 지표</text>
+        <text x="12" y="15" fontSize="10.5" fontWeight="600" fill={FIG_INK}>개념 · 맥락</text>
+        <text x="12" y="28" fontSize="9.5" fill={FIG_MUTE}>주제 · 질문 · AI의 역할</text>
         <rect x="165.5" y="0.5" width="154" height="34" rx="6" fill="none" stroke={FIG_RULE} strokeDasharray="3 3" />
-        <text x="177" y="15" fontSize="10.5" fontWeight="600" fill={FIG_INK}>정성 데이터</text>
-        <text x="177" y="28" fontSize="9.5" fill={FIG_MUTE}>뉴스레터 · 애널리스트 리포트</text>
+        <text x="177" y="15" fontSize="10.5" fontWeight="600" fill={FIG_INK}>시각 · 공간 자료</text>
+        <text x="177" y="28" fontSize="9.5" fill={FIG_MUTE}>레퍼런스 · 오브제 · 전시장</text>
         <path d="M77 35 L77 42 L243 42 L243 35" fill="none" stroke={FIG_RULE} />
         <line x1="160" y1="42" x2="160" y2="52" stroke={FIG_NOW} strokeWidth="1.5" />
         <polygon points="155,48 165,48 160,54" fill={FIG_NOW} />
       </g>
-      {stage(58, '01', '이론 정립 · 정보 미학 프레임워크', '산출: 데이터 → 시각 기호 변환 규칙, 미학적 기준')}
+      {stage(58, '01', '개념 정립 · 스토리보드', '산출: 작품 문장 · 키 비주얼 · 장면 구성')}
       {link(111)}
-      {stage(128, '02', 'AI 생성형 시각화 시스템 구현', '산출: 데이터 → 시각 서사 자동 변환 프로토타입', true)}
+      {stage(128, '02', 'AI 이미지 · 영상 생성과 후반 제작', '산출: 시퀀스 · 합성 · 편집 · 사운드', true)}
       {link(181)}
-      {stage(198, '03', '실무 그룹 대상 정량 · 정성 검증', '산출: 정보 습득 속도 · 정확도 · 신뢰도 변화')}
+      {stage(198, '03', '구조물 매핑 · 공간 테스트', '산출: 영상 · 오브제 · 장비가 결합된 설치 작품')}
     </svg>
   );
 };
 
 /** 그림 7 — 검증 설계: A/B 비교 + 전문가 인터뷰 → 측정 지표 */
 const ValidationFigure = () => (
-  <svg viewBox="0 0 320 132" role="img" aria-label="검증 설계: 텍스트 리포트와 자동 생성 영상을 견주는 A/B 테스트와 전문가 인터뷰">
-    <text x="0" y="10" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">투자 운용 · 심사 실무자</text>
+  <svg viewBox="0 0 320 132" role="img" aria-label="영상 시퀀스와 실제 공간 테스트를 함께 검토하는 제작 점검 방식">
+    <text x="0" y="10" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">영상과 설치를 함께 점검</text>
     {/* A: 텍스트 리포트 */}
     <g transform="translate(0 18)">
       <rect x="0.5" y="0.5" width="92" height="56" rx="6" fill="none" stroke={FIG_RULE} />
-      <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>A · 텍스트 리포트</text>
+      <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>A · 화면 시퀀스</text>
       <g stroke={FIG_RULE} strokeWidth="2" strokeLinecap="round">
         {[26, 33, 40, 47].map((y, i) => (
           <line key={y} x1="10" y1={y} x2={[70, 62, 74, 50][i]} y2={y} />
@@ -961,7 +960,7 @@ const ValidationFigure = () => (
     {/* B: 자동 생성 영상 */}
     <g transform="translate(0 84)">
       <rect x="0.5" y="0.5" width="92" height="46" rx="6" fill="none" stroke={FIG_INK} strokeWidth="1.5" />
-      <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>B · 자동 생성 영상</text>
+      <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>B · 공간 테스트</text>
       <rect x="10" y="24" width="10" height="16" rx="1" fill={FIG_INK} />
       <rect x="24" y="30" width="10" height="10" rx="1" fill={FIG_INK} />
       <rect x="38" y="20" width="10" height="20" rx="1" fill={FIG_NOW} />
@@ -974,11 +973,11 @@ const ValidationFigure = () => (
     {/* 지표 */}
     <g transform="translate(136 18)">
       <rect x="0.5" y="0.5" width="184" height="112" rx="6" fill="none" stroke={FIG_RULE} />
-      <text x="12" y="18" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">측정 지표</text>
+      <text x="12" y="18" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">검토 항목</text>
       {[
-        ['정보 습득 속도', 0.82],
-        ['정확도', 0.7],
-        ['설득력 · 신뢰도', 0.58],
+        ['개념 전달', 0.82],
+        ['시각 일관성', 0.7],
+        ['공간 적합성', 0.58],
       ].map(([label, w], i) => (
         <g key={String(label)} transform={`translate(12 ${30 + i * 26})`}>
           <text x="0" y="9" fontSize="10.5" fill={FIG_INK}>{label}</text>
@@ -993,10 +992,10 @@ const ValidationFigure = () => (
 /** 그림 8 — 기대 효과의 파급: 본 연구 → PE 실무 → 자본 시장 → 투자 생태계. 아래로 갈수록 넓어진다 */
 const ImpactFigure = () => {
   const tiers: [number, string, string][] = [
-    [116, '본 연구', '예술공학 × 금융'],
-    [184, 'PE 실무 · B2B 시각화', '현장 적용'],
-    [252, '자본 시장의 정보 격차 완화', '차세대 IR 시스템'],
-    [320, '투자 생태계의 투명성', '사회적 가치'],
+    [116, '기존 실무', '합성 · 편집 · 모션'],
+    [184, '생성형 AI 탐색', '이미지 · 영상 변주'],
+    [252, '구조물 프로젝션 매핑', '영상과 물성의 결합'],
+    [320, '설치 작품', '공간 · 동선 · 관람 경험'],
   ];
   return (
     <svg viewBox="0 0 320 224" role="img" aria-label="기대 효과의 파급: 본 연구에서 PE 실무, 자본 시장, 투자 생태계로 넓어진다">
@@ -1024,16 +1023,16 @@ const ImpactFigure = () => {
 /** 그림 9 — 졸업 후 계획: 연구 성과에서 세로 줄기를 타고 세 갈래로 뻗는다 */
 const AfterFigure = () => {
   const items: [string, string][] = [
-    ['B2B 시각화 솔루션 상용화', 'PE 환경 맞춤'],
-    ['금융 × 예술공학 융합 전문가', '보수적 생태계와의 가교'],
-    ['학문적 지평의 실물 경제 확장', '데이터 시각화 연구의 산업 적용'],
+    ['중간발표', '아이디어 · 키 비주얼 · 스토리보드'],
+    ['작품 최종 완성', 'AI 영상 · 오브제 · 장비'],
+    ['Exhibition', '아트센터 2층 설치 · 전시'],
   ];
   const cy = (i: number) => 20 + i * 52;
   return (
     <svg viewBox="0 -3 320 150" role="img" aria-label="졸업 후 계획: 연구 성과를 상용화, 융합 전문가 활동, 학문적 확장으로 잇는다">
       <rect x="0.5" y="47.5" width="96" height="50" rx="6" fill={FIG_INK} />
-      <text x="48" y="69" fontSize="11" fontWeight="600" fill="var(--paper)" textAnchor="middle">연구 성과</text>
-      <text x="48" y="84" fontSize="9" fill="var(--paper)" textAnchor="middle">석사 과정</text>
+      <text x="48" y="69" fontSize="11" fontWeight="600" fill="var(--paper)" textAnchor="middle">작품 구상</text>
+      <text x="48" y="84" fontSize="9" fill="var(--paper)" textAnchor="middle">생성형 AI × 공간</text>
       {/* 줄기: 상자 오른쪽에서 나와 세로로 서고, 각 갈래로 수평 가지 */}
       <g fill="none" stroke={FIG_NOW} strokeWidth="1.2">
         <line x1="97" y1="72" x2="112" y2="72" />
@@ -1080,11 +1079,11 @@ const InlineFigure = ({ name }: { name: InlineFigureName }) => {
 const MethodologyFigures = () => (
   <aside className="cvx-figures" aria-label="시각자료">
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">연구 로드맵</p>
+      <p className="cvx-figure-title">제작 로드맵</p>
       <RoadmapFigure />
     </figure>
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">검증 설계</p>
+      <p className="cvx-figure-title">영상·공간 점검</p>
       <ValidationFigure />
     </figure>
   </aside>
@@ -1093,11 +1092,11 @@ const MethodologyFigures = () => (
 const OutlookFigures = () => (
   <aside className="cvx-figures" aria-label="시각자료">
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">기대 효과의 파급</p>
+      <p className="cvx-figure-title">평면 영상에서 설치 작품으로</p>
       <ImpactFigure />
     </figure>
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">졸업 후 계획</p>
+      <p className="cvx-figure-title">학기 제작 일정</p>
       <AfterFigure />
     </figure>
   </aside>
@@ -1106,11 +1105,11 @@ const OutlookFigures = () => (
 const MotivationFigures = () => (
   <aside className="cvx-figures" aria-label="시각자료">
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">연구 파이프라인</p>
+      <p className="cvx-figure-title">작업 파이프라인</p>
       <PipelineFigure />
     </figure>
     <figure className="cvx-figure">
-      <p className="cvx-figure-title">선행 연구 지형도</p>
+      <p className="cvx-figure-title">작업 영역의 확장</p>
       <LandscapeFigure />
     </figure>
   </aside>
@@ -1232,7 +1231,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
 
     case 'cv-motivation':
       return (
-        <Slide num={meta?.num ?? null} title="진학 동기 및 배경" bodyClassName="cvx-body--figure">
+        <Slide num={meta?.num ?? null} title="작업 배경" bodyClassName="cvx-body--figure">
           {renderBlocks(MOTIVATION_BLOCKS)}
           <MotivationFigures />
         </Slide>
@@ -1240,7 +1239,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
 
     case 'cv-interests':
       return (
-        <Slide num={meta?.num ?? null} title="주요 연구 관심 분야" bodyClassName="cvx-body--figure">
+        <Slide num={meta?.num ?? null} title="생성형 AI 활용 관점" bodyClassName="cvx-body--figure">
           <ul className="cvx-list">
             {researchInterests.map((item, i) => (
               <li key={item.title} className="cvx-list-row">
@@ -1261,7 +1260,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
 
     case 'cv-methodology':
       return (
-        <Slide num={meta?.num ?? null} title="연구 계획 및 방법론" bodyClassName="cvx-body--figure">
+        <Slide num={meta?.num ?? null} title="제작 방식과 워크플로" bodyClassName="cvx-body--figure">
           <ol className="cvx-list cvx-list--steps">
             {researchStages.map((stage, i) => (
               <li key={stage.step} className="cvx-list-row">
@@ -1283,7 +1282,7 @@ function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode 
 
     case 'cv-outlook':
       return (
-        <Slide num={meta?.num ?? null} title="기대 효과 및 졸업 후 계획" bodyClassName="cvx-body--figure">
+        <Slide num={meta?.num ?? null} title="향후 작업 방향" bodyClassName="cvx-body--figure">
           {renderBlocks(OUTLOOK_BLOCKS)}
           <OutlookFigures />
         </Slide>

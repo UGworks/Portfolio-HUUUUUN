@@ -9,6 +9,7 @@ import { ease, useMotionPrefs } from '../motion';
 interface PortfolioLayoutProps {
   projects: Project[];
   onProjectChange?: (project: Project | null, method?: ProjectSelectMethod) => void;
+  presentationTarget?: { id: string; request: number } | null;
   isIntro?: boolean;
   introMaskDelayMs?: number;
   introMaskDurationMs?: number;
@@ -21,6 +22,7 @@ interface PortfolioLayoutProps {
 const PortfolioLayout = ({
   projects,
   onProjectChange,
+  presentationTarget = null,
   isIntro = false,
   introMaskDelayMs = 0,
   introMaskDurationMs = 2000,
@@ -61,15 +63,6 @@ const PortfolioLayout = ({
   useEffect(() => {
     chromeRevealedRef.current = chromeRevealed;
   }, [chromeRevealed]);
-
-  /** 발표용 북마크 — Shift+숫자로 바로 간다. 값은 작품 id(순서를 바꿔도 같은 작품을 가리킨다).
-      사이드바가 거리에 비례한 시간으로 스크롤하므로 멀수록 더 길게 '스르륵' 지나간다. */
-  const BOOKMARKS: Record<string, string> = {
-    Digit1: '1', // COWAY
-    Digit2: '34', // LG 인스타그램 운영
-    Digit3: '35-1', // Libratum Investment
-    Digit4: '60', // 대한민국육군
-  };
 
   /** 모든 작품 이동의 단일 창구 — 휠·키보드·스와이프·클릭·자동전환이 공유한다 */
   const goToIndex = useCallback(
@@ -201,16 +194,6 @@ const PortfolioLayout = ({
 
       let target: number | null = null;
 
-      // Shift+1~4: 북마크. 키 자판에 따라 e.key가 '!'·'@'로 바뀌므로 e.code로 본다
-      if (e.shiftKey && e.code in BOOKMARKS) {
-        const index = projects.findIndex((project) => project.id === BOOKMARKS[e.code]);
-        if (index >= 0) {
-          e.preventDefault();
-          goToIndex(index, 'keyboard');
-        }
-        return;
-      }
-
       switch (e.key) {
         case 'ArrowDown':
         case 'ArrowRight':
@@ -315,6 +298,13 @@ const PortfolioLayout = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects.length]);
+
+  /** 앱 전역 단축키가 지정한 작품을 이 컴포넌트의 내부 인덱스와 동기화한다. */
+  useEffect(() => {
+    if (!presentationTarget) return;
+    const index = projects.findIndex((project) => project.id === presentationTarget.id);
+    if (index >= 0) goToIndex(index, 'keyboard');
+  }, [presentationTarget, projects, goToIndex]);
 
   const activeProject = projects[activeIndex];
 

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <!-- 혼합 콘텐츠(http:// 리소스) 자동 https 승격 — HTTPS 페이지의 "주의 요함" 방지 -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="upgrade-insecure-requests"
+    />
+    <!-- 파비콘 — 모던 브라우저는 SVG 를 쓰고(어느 배율에서도 선명), 구형은 .ico 로 떨어진다.
+         .ico 를 먼저 두고 SVG 를 뒤에 둬야 SVG 지원 브라우저가 SVG 를 고른다. -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- ⚠️ iOS 홈화면 아이콘은 SVG 를 못 읽는다 — 180×180 PNG 가 필요하다(미제작). -->
+    <link rel="apple-touch-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#109ba5" />
+    <!-- 구글 자동번역 막기 -->
+    <!-- <meta name="google" content="notranslate" /> -->
+    <link rel="manifest" href="/manifest.json" />
+    <!-- 마스트헤드(이름·인사말) 전용 서체 — 구버전 대문의 아이덴티티 스택
+         (Poppins/Montserrat 영문 + NanumSquare 한글). 본문은 Pretendard 유지. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Montserrat:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css"
+      rel="stylesheet"
+    />
+    <title>TVCF 포트폴리오</title>
+    <script type="module" crossorigin src="/assets/index-DgGet1pS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DJgabi80.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

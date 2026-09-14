@@ -22,6 +22,14 @@ import {
 
 type AppSection = 'works' | 'about' | 'contact';
 
+/** 발표용 작품 북마크. 앱 전역에서 Shift+1~4로 호출한다. */
+const PRESENTATION_BOOKMARKS: Record<string, string> = {
+  Digit1: '1', // COWAY
+  Digit2: '34', // LG 인스타그램 운영
+  Digit3: '35-1', // Libratum Investment
+  Digit4: '60', // 대한민국육군
+};
+
 const getInitialSection = (): AppSection => {
   const hash = window.location.hash.replace('#', '');
   if (hash === 'contact') return 'contact';
@@ -38,6 +46,7 @@ function App() {
   const [activeSection, setActiveSection] = useState<AppSection>(getInitialSection);
   const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
   const [showPersonIntro, setShowPersonIntro] = useState(() => getInitialSection() === 'works');
+  const [presentationTarget, setPresentationTarget] = useState<{ id: string; request: number } | null>(null);
   const [introChromeRevealing, setIntroChromeRevealing] = useState(false);
   /** 발표 엔딩(Thank you) 화면 — Shift+5 토글, Esc·클릭으로 닫기 */
   const [showEnding, setShowEnding] = useState(false);
@@ -167,6 +176,18 @@ function App() {
     setShowPersonIntro(true);
   }, [flushProjectLeave]);
 
+  const handlePresentationBookmark = useCallback((projectId: string) => {
+    flushProjectLeave();
+    setShowEnding(false);
+    setShowPersonIntro(false);
+    setIntroChromeRevealing(false);
+    hasPlayedEntranceRef.current = true;
+    setHasPlayedIntro(true);
+    setActiveSection('works');
+    setPresentationTarget((current) => ({ id: projectId, request: (current?.request ?? 0) + 1 }));
+    window.history.replaceState(null, '', '#works');
+  }, [flushProjectLeave]);
+
   const portfolioChromeRevealed =
     !isMobileLayout || !showPersonIntro || introChromeRevealing;
   const showPortfolioChrome = !showPersonIntro || isMobileLayout;
@@ -250,6 +271,21 @@ function App() {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // Shift+1~4: 어느 섹션에서든 포트폴리오의 발표용 북마크로 이동한다.
+      if (e.shiftKey && e.code in PRESENTATION_BOOKMARKS && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (isEditing()) return;
+        e.preventDefault();
+        handlePresentationBookmark(PRESENTATION_BOOKMARKS[e.code]);
+        return;
+      }
+      // Shift+`: 발표의 첫 소개 화면으로 돌아간다. 자판 문자와 무관하게 물리 키로 판별한다.
+      if (e.shiftKey && e.code === 'Backquote' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (isEditing()) return;
+        e.preventDefault();
+        setShowEnding(false);
+        handleShowPersonIntro();
+        return;
+      }
       // Shift+5: 엔딩 화면 토글 (자판에 따라 e.key가 '%'로 바뀌므로 e.code로 본다)
       if (e.shiftKey && e.code === 'Digit5' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (isEditing()) return;
@@ -275,7 +311,7 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [handlePresentationBookmark, handleShowPersonIntro]);
 
   useEffect(() => {
     return () => {
@@ -332,6 +368,7 @@ function App() {
               <PortfolioLayout
                 projects={projects}
                 onProjectChange={handleProjectChange}
+                presentationTarget={presentationTarget}
                 isIntro={isPortfolioEntering}
                 introMaskDelayMs={introMaskDelayMs}
                 introMaskDurationMs={introMaskDurationMs}
