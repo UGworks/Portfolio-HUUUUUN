@@ -113,11 +113,6 @@ const EndingScreen = ({ onClose }: { onClose: () => void }) => {
 
       <div className="ending-stage">
         <div className="ending-main">
-          <motion.p className="ending-kicker" {...rise(0.1)}>
-            <i className="ending-dot" aria-hidden />
-            중앙대학교 첨단영상대학원 · 예술공학 전공 석사과정
-          </motion.p>
-
           <motion.h1 className="ending-title" {...rise(0.22)}>
             Thank you.
           </motion.h1>

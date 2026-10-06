@@ -131,7 +131,6 @@ const videoLOOKAS = asset('video/LOOKAS.webm');
 const videoMANGO = asset('video/MANGO.webm');
 const videoMILLET_30 = asset('video/MILLET_30.webm');
 const videoNEXEN_A = asset('video/NEXEN_A.webm');
-const videoOFFICE_30 = asset('video/OFFICE_30.webm');
 const videoOOH_15 = asset('video/OOH_15.webm');
 const videopizza_Full_A = asset('video/pizza_Full_A.webm');
 const videoPIZZAHUT_SOJAE = asset('video/PIZZAHUT_SOJAE.webm');
@@ -147,15 +146,12 @@ const video경기도_20A = asset('video/경기도_20A.webm');
 const video농부 = asset('video/농부.webm');
 const video바슈롬_40 = asset('video/바슈롬_40.webm');
 const video불가리스_ASMR_30A = asset('video/불가리스_ASMR_30A.webm');
-const video시안배경_1_1 = asset('video/시안배경_1_1.webm');
 const video장병A_FINAL = asset('video/장병A_FINAL_저해상.webm');
 const video젠틀피버_FULL_B = asset('video/젠틀피버_FULL_B.webm');
 const video카와 = asset('video/카와.webm');
 const video프렌치카페 = asset('video/프렌치카페 카페믹스.webm');
 const video하나금융그룹 = asset('video/하나금융그룹 실적발표.webm');
 const video현대자동차 = asset('video/현대자동차 월드컵.webm');
-const video광명동굴 = asset('video/광명동굴.webm');
-const img가야테마파크 = asset('video/가야테마파크.jpg');
 
 // 썸네일 이미지 import
 import thumb0129 from './IMG/0129_코웨이PR_tvcf용.webm_20260121_230857.612.webp';
@@ -191,7 +187,6 @@ import thumbLOOKAS from './IMG/LOOKAS.webm_20260121_231345.040.webp';
 import thumbMANGO from './IMG/MANGO.webm_20260121_231411.056.webp';
 import thumbMILLET_30 from './IMG/MILLET_30.webm_20260121_231415.945.webp';
 import thumbNEXEN_A from './IMG/NEXEN_A.webm_20260121_231428.888.webp';
-import thumbOFFICE_30 from './IMG/OFFICE_30.webm_20260121_231438.112.webp';
 import thumbOOH_15 from './IMG/OOH_15.webm_20260121_231447.888.webp';
 import thumbpizza_Full_A from './IMG/pizza_Full_A.webm_20260121_231459.487.webp';
 import thumbPIZZAHUT_SOJAE from './IMG/PIZZAHUT_SOJAE.webm_20260121_231501.576.webp';
@@ -206,7 +201,6 @@ import thumb경기도_20A from './IMG/경기도_20A.webm_20260121_231556.911.web
 import thumb농부 from './IMG/농부.webm_20260121_231613.056.webp';
 import thumb바슈롬_40 from './IMG/바슈롬_40.webm_20260121_231618.599.webp';
 import thumb불가리스_ASMR_30A from './IMG/불가리스_ASMR_30A.webm_20260121_231645.239.webp';
-import thumb시안배경_1_1 from './IMG/시안배경_1_1.webm_20260121_231720.438.webp';
 import thumb장병A_FINAL from './IMG/장병A_FINAL_저해상.webm_20260121_230730.196.webp';
 import thumb젠틀피버_FULL_B from './IMG/젠틀피버_FULL_B.webm_20260121_230747.436.webp';
 import thumb프렌치카페 from './IMG/프렌치카페 카페믹스.png';
@@ -225,27 +219,6 @@ const projectsRaw: Project[] = [
     participation: 100,
     keywords: ["씨네그라픽", "DOOH", "SNS 캠페인", "2D TD", "공공광고"],
     description: "나의영웅 나의육군\n\n대한민국 육군 모병 DOOH 광고. 육군의 정체성과 복무의 가치를 시각화하고, 숏폼 SNS와 다채널 노출을 전제로 구성했다.\n\n2D TD로 기획부터 마무리까지 혼자 맡았다. 공군·육군·특전부대를 상징하는 오브젝트에 씨네그라픽(Cinegraphic) 효과를 입혀 부대마다 다른 성격이 한 화면 안에서 읽히게 했다. 군 복무의 의미와 각 부대의 역할이 자연스럽게 전달되어 모병 홍보에 힘이 되도록 완성도를 끌어올렸다.",
-  },
-  {
-    id: "59",
-    title: "계양 아라온",
-    category: "Public Art / Media Facade",
-    video: video시안배경_1_1,
-    thumbnail: thumb시안배경_1_1,
-    participation: 100,
-    link: "https://www.segyenewsagency.com/news/articleView.html?idxno=625681",
-    linkLabel: "관련 뉴스 보기",
-    keywords: ["미디어파사드", "아나몰픽", "공공미술", "조명 디자인", "미디어 큐브"],
-    description: "아라온 빛의 거리\n\n계양 아라온 '빛의 거리' 미디어파사드. 전체 구간에서 가장 중심이 되는 계양대교의 원형 빛기둥과 미디어큐브, 잉어동상을 맡았다.\n\n2D TD로 그래픽 아트웍과 애니메이션을 만들었다. 빛기둥에 들어갈 조명 패턴과 시퀀스를 설계하고, 미디어큐브와 잉어동상에 투영되는 콘텐츠는 그래픽 합성과 컬러 그레이딩으로 다듬었다. 공공미술이라 화려함보다 세 지점이 한 톤으로 이어지는 일관성을 우선했고, 그 결과 공간을 걷는 경험 자체가 작품이 되도록 했다.",
-  },
-  {
-    id: "66",
-    title: "광명동굴",
-    category: "Public Art / Media Facade",
-    video: video광명동굴,
-    participation: 85,
-    keywords: ["미디어파사드", "LED", "동굴", "빛의 공간", "터널"],
-    description: "2022~2023 광명동굴 빛의 공간\n\n폐광을 되살린 국내 유일의 동굴예술 공간. 긴 터널 벽면을 LED로 채우고 빛, 레이저, 음악을 하나의 쇼로 묶은 미디어파사드다.\n\n2D TD로 터널 안 LED 조명·영상 연출과 미디어 콘텐츠 제작을 맡았다. 쇼를 위한 그래픽 아트웍과 시퀀스를 디자인했는데, 관람객이 걸으면서 보는 영상이라 장면 사이의 이음새와 몰입감을 가장 오래 다듬었다. 어둠 속 벽면을 밝히는 연출로 공간의 규모감과 '빛의 공간'이라는 콘셉트를 전달했다.",
   },
   {
     id: "1",
@@ -552,16 +525,6 @@ const projectsRaw: Project[] = [
     keywords: ["넥센타이어", "Nexen Tire", "Viral", "인포그래픽", "타이포그래픽", "VFX", "2D TD", "합성", "자막", "지도 그래픽", "유럽공장", "체코"],
   },
   {
-    id: "43",
-    title: "고려은단",
-    category: "TVCF",
-    video: videoOFFICE_30,
-    thumbnail: thumbOFFICE_30,
-    participation: 90,
-    description: "비타민C 1000 유재석 편\n\n고려은단 비타민C 1000 TVCF, 30초. 유재석이라는 이름이 주는 신뢰를 브랜드와 제품 메시지로 잇는 광고.\n\n2D TD로 프로젝트를 진행했다. 합성과 제품 패키지 디자인, 자막 애니메이션을 맡아 브랜드 톤과 시각적 완성도를 맞췄다.",
-    keywords: ["고려은단", "비타민C 1000", "유재석", "TVCF", "2D TD", "합성", "제품 패키지 디자인", "자막 애니메이션"],
-  },
-  {
     id: "44",
     title: "OOH 15",
     category: "TVCF",
@@ -754,16 +717,6 @@ const projectsRaw: Project[] = [
     keywords: ["현대자동차", "2014 브라질 월드컵", "카카", "카시야스", "자막 이펙트", "매트페인팅", "플렉서스", "VFX", "2D", "스포츠 마케팅"],
     description: "2014 FIFA 브라질 월드컵 캠페인\n\n현대자동차 2014 FIFA 브라질 월드컵 공식 후원사 캠페인 광고. 카카, 카시야스, 오스카를 홍보대사로 세우고, 56개국 시승회와 16개국 '현대 팬파크'로 이어진 글로벌 마케팅의 광고 촬영과 SNS 캠페인 영상이다.\n\n2D Artist로 시각적 임팩트를 맡았다. 선수들의 메시지와 브랜드 슬로건이 역동적으로 읽히도록 자막 이펙트를 만들고, 매트 페인팅으로 월드컵 경기장과 브라질의 상징적인 배경을 강화해 현장감을 높였다. 플렉서스(Plexus)로 입자와 선이 이어지는 비주얼 이펙트를 구현해 축구의 에너지와 현대자동차의 혁신성을 그래픽으로 표현했다.",
   },
-  {
-    id: "67",
-    title: "김해 가야테마파크",
-    category: "Public Art / Media Facade",
-    image: img가야테마파크,
-    thumbnail: img가야테마파크,
-    participation: 100,
-    keywords: ["미디어파사드", "프로젝션 매핑", "입체 조형물", "공간 연출"],
-    description: "2024 김해 가야테마파크\n\n김해 가야테마파크 미디어파사드 프로젝트. 입체 조형물을 대상으로 한 프로젝션 매핑 콘텐츠와 공간 연출을 맡았다.",
-  },
 ];
 
 type PortfolioSection = 'tvcf' | 'webui' | 'ir' | 'facade' | 'other';
@@ -812,7 +765,7 @@ const TVCF_THEME_ORDER: { theme: string; ids: string[] }[] = [
   { theme: '홈가전', ids: ['1', '15'] }, // COWAY, LG전자 트롬
   { theme: '모바일', ids: ['2', '28', '29', '47'] }, // LG G5, K40S, K50, Q6
   { theme: '게임', ids: ['7', '31', '52', '51'] }, // Terra M, NC Soft 20주년, 서든어택, 테이스티사가
-  { theme: '기능식품', ids: ['18', '43', '53', '58'] }, // 고려은단 ×2, VAP, 떠먹는 불가리스
+  { theme: '기능식품', ids: ['18', '53', '58'] }, // 고려은단, VAP, 떠먹는 불가리스
   {
     theme: '식품·음료·유통',
     ids: ['4', '6', '8', '63', '62', '30', '26', '45', '46', '48', '49', '20', '22', '56'],

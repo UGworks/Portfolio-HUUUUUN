@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
 import {
@@ -19,23 +20,21 @@ import {
   type Transition,
 } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { info, projects } from '../data';
-import { trackOutboundClick } from '../analytics';
+import { info } from '../data';
+import { trackOutboundClick, trackResumePdfSave } from '../analytics';
 import TvcfSheet from './TvcfSheet';
+import seonghunImage from '../IMG/seonghun.jpg';
 import previewLibratum from '../IMG/site-previews/libratum.webp';
 import previewOpenexc from '../IMG/site-previews/openexc.webp';
 import previewConcentrix from '../IMG/site-previews/concentrix.webp';
 import previewVixen from '../IMG/site-previews/vixen.webp';
-import previewSillok from '../IMG/site-previews/sillok.jpg';
-import previewTufte from '../IMG/site-previews/tufte.webp';
-import previewEyes from '../IMG/site-previews/eyes.webp';
-import previewNarrative from '../IMG/site-previews/narrative.webp';
-import previewData2vis from '../IMG/site-previews/data2vis.webp';
-import previewLida from '../IMG/site-previews/lida.webp';
+import previewKeystone from '../IMG/site-previews/keystone.png';
 
-/** 마우스를 올리면 뜨는 미리보기.
-    · 웹사이트: url(새 탭) + preview(캡처 이미지)
-    · 포트폴리오 작품: video(자동 재생) 또는 preview(정지 이미지) + label(작품명) */
+/** 페이지 위 시트로 여는 내용. 컨텍스트로 어디서든 연다 */
+type SheetContent = { url: string; title: string; kicker?: string; image?: string };
+const OpenSheetContext = createContext<(content: SheetContent) => void>(() => {});
+
+/** 마우스를 올리면 뜨는 미리보기. 웹사이트는 url + 캡처, 작품은 영상 또는 썸네일 */
 type SitePreview = {
   url?: string;
   preview?: string;
@@ -43,13 +42,10 @@ type SitePreview = {
   label?: string;
   /** false면 iframe 삽입을 막는 사이트 → 시트에 캡처 이미지를 띄운다 */
   embed?: boolean;
-  /** 시트 제목 옆 꼬리표. 기본 '웹사이트' */
   kicker?: string;
 };
 
-/** 페이지 위 시트로 여는 내용. 컨텍스트로 어디서든 연다 */
-type SheetContent = { url: string; title: string; kicker?: string; image?: string };
-const OpenSheetContext = createContext<(content: SheetContent) => void>(() => {});
+const siteHost = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 /** 사이트 링크는 새 탭 대신 시트로. 삽입이 막힌 곳은 캡처 이미지로 */
 const useOpenSite = () => {
@@ -66,30 +62,16 @@ const useOpenSite = () => {
   };
 };
 
-/** 포트폴리오 작품을 미리보기로. 영상이 있으면 영상, 없으면 썸네일 */
-const projectPeek = (id: string): SitePreview | undefined => {
-  const project = projects.find((item) => item.id === id);
-  if (!project) return undefined;
-  return { video: project.video, preview: project.thumbnail ?? project.image, label: project.title };
-};
-
 const SITE = {
   libratum: { url: 'https://libratuminvestment.com/', preview: previewLibratum, label: 'Libratum Investment' },
   openexc: { url: 'https://openexc.com/', preview: previewOpenexc, label: 'OpenExchange' },
   concentrix: { url: 'https://kr.concentrix.com/', preview: previewConcentrix, label: 'Concentrix Korea', embed: false },
-  // http 전용 사이트: https로 배포된 페이지 안에서는 브라우저가 혼합 콘텐츠로 막는다 → 캡처로 대체
   vixen: { url: 'http://www.vixenvfxstudio.com/kr/', preview: previewVixen, label: 'VIXEN VFX Studio', embed: false },
-  sillok: { url: 'https://www.riss.kr/link?id=T13413899', preview: previewSillok, label: '조선왕조실록 인물중심 데이터 시각화 (박진완 지도, 2014)', kicker: '참고 자료' },
-  tufte: { url: 'https://www.edwardtufte.com/book/the-visual-display-of-quantitative-information/', preview: previewTufte, label: 'Tufte · The Visual Display of Quantitative Information', kicker: '참고 자료' },
-  eyes: { url: 'https://ieeexplore.ieee.org/document/545307', preview: previewEyes, label: 'Shneiderman · The Eyes Have It', kicker: '참고 자료' },
-  narrative: { url: 'https://idl.cs.washington.edu/papers/narrative/', preview: previewNarrative, label: 'Segel & Heer · Narrative Visualization', kicker: '참고 자료' },
-  data2vis: { url: 'https://arxiv.org/abs/1804.03126', preview: previewData2vis, label: 'Data2Vis (arXiv)', embed: false, kicker: '참고 자료' },
-  lida: { url: 'https://microsoft.github.io/lida/', preview: previewLida, label: 'LIDA · Microsoft', kicker: '참고 자료' },
+  keystone: { url: 'http://www.keystoneplay.com/about', preview: previewKeystone, label: 'Keystone Play', embed: false },
 } satisfies Record<string, SitePreview>;
 
-const PROGRAM = '중앙대학교 첨단영상대학원 예술공학 전공 · 석사과정';
 const PHONE = '010-2629-7954';
-const EMAIL = 'huuuuun@cau.ac.kr';
+const EMAIL = 'huuuun@kakao.com';
 /** 엔딩 화면 등 다른 곳에서도 같은 연락처를 쓴다 */
 export const CONTACT = { phone: PHONE, email: EMAIL } as const;
 
@@ -97,259 +79,127 @@ export const CONTACT = { phone: PHONE, email: EMAIL } as const;
  * 목차. num이 있는 항목은 연구계획서 본문(순서가 의미를 갖는 논지),
  * num이 없는 항목은 기록(개요·경력·자격증)이라 번호 대신 점으로 표시한다.
  */
-const CV_NAV = [
-  { id: 'cv-intro', label: '개요', num: null },
-  { id: 'cv-motivation', label: '작업 배경', num: '01' },
-  { id: 'cv-interests', label: '생성형 AI 활용 관점', num: '02' },
-  { id: 'cv-methodology', label: '제작 방식과 워크플로', num: '03' },
-  { id: 'cv-outlook', label: '향후 작업 방향', num: '04' },
-  { id: 'cv-experience', label: '경력', num: null },
-  { id: 'cv-skills', label: '자격증 및 기술', num: null },
-] as const;
+const CV_NAV = [{ id: 'cv-intro', label: '이력서', num: null }] as const;
 
 type CvSectionId = (typeof CV_NAV)[number]['id'];
 
-/** 학력. from = 입학, to = 졸업(재학 중이면 '현재'). 입학 연도를 모르면 졸업만 표시한다. */
-const EDUCATION: { school: string; degree: string; from?: string; to: string; current?: boolean }[] = [
+/** 학력. 경력과 같이 학교(굵게) / 학위(중간) · 날짜 */
+const EDUCATION: { school: string; program: string; date: string; gpa?: string }[] = [
   {
     school: '중앙대학교 첨단영상대학원',
-    degree: '예술공학 전공 · 석사과정',
-    to: '현재',
-    current: true,
+    program: '예술공학 전공 · 석사과정',
+    date: '재학중',
   },
   {
-    school: '숭실대학교 글로벌미래교육원',
-    degree: '시각디자인학 학사',
-    to: '2026.02',
+    school: '숭실대학교 글로벌미래교육원 (학점은행제)',
+    program: '시각디자인학 학사',
+    date: '2026. 02',
+    gpa: '3.91',
   },
   {
     school: '한국폴리텍5대학',
-    degree: '멀티미디어학과',
-    to: '2009.02',
+    program: '멀티미디어학과',
+    date: '2009. 02',
+    gpa: '3.95',
   },
 ];
 
-const educationPeriod = (item: (typeof EDUCATION)[number]) =>
-  item.from ? `${item.from} – ${item.to}` : item.current ? '2026 후반기 신입학' : `${item.to} 졸업`;
+const PROFILE =
+  '**13년 차** 시각 디자인·영상 전문가로, TVCF, 모션그래픽, 브랜드 필름, 라이브, 웹 콘텐츠까지 영상\u00A0제작 전반을 맡아 왔습니다.\n\n기획부터 촬영 대응, 합성·모션, 납품 포맷까지 한 흐름으로 이해하고, 그 과정을 **반복 가능한 워크플로우**로 만드는 데 강점이 있습니다.';
 
-/**
- * 본문 블록. 통글 대신 소제목·명제·사실로 나눠 훑어 읽을 수 있게 한다.
- * 문장은 원문 그대로이며 재구성만 했다.
- */
-/** 사실 한 줄. 문자열이거나, 미리보기 사이트가 붙은 객체 */
-type FactItem = string | { text: string; site?: SitePreview };
-const factText = (item: FactItem) => (typeof item === 'string' ? item : item.text);
-
-/** 좁은 화면에서 행 바로 아래에 끼워 넣을 그림 이름(INLINE_FIGURES의 키) */
-type InlineFigureName =
-  | 'pipeline'
-  | 'landscape'
-  | 'mapping'
-  | 'signal'
-  | 'live'
-  | 'roadmap'
-  | 'validation'
-  | 'impact'
-  | 'after';
-
-type Block =
-  | { kind: 'sub'; text: string; figure?: InlineFigureName }
-  | { kind: 'quote'; text: string; source?: string; figure?: InlineFigureName }
-  | { kind: 'facts'; items: FactItem[] }
-  | { kind: 'p'; text: string };
-
-const MOTIVATION_BLOCKS: Block[] = [
-  { kind: 'sub', text: '이미지를 다뤄 온 방식' },
-  {
-    kind: 'facts',
-    items: [
-      { text: '포스트프로덕션에서 TVCF·뮤직비디오·브랜드 영상의 합성과 모션그래픽 제작', site: SITE.vixen },
-      { text: '글로벌 웹 UI·UX 환경에서 제품 기능과 사용자 경험을 움직이는 이미지로 설계', site: SITE.concentrix },
-      { text: '미디어파사드와 라이브 IR로 화면 밖 공간·현장·관람 경험까지 작업 영역 확장', site: projectPeek('67') },
-    ],
-  },
-  {
-    kind: 'quote',
-    text: '합성하고 편집하는 제작자에서,\n이미지의 생성 규칙과 경험 전체를 설계하는 창작자로.\n생성형 AI는 이 전환을 확장하는\n새로운 영상 재료.',
-    source: '작업의 출발점',
-    figure: 'pipeline',
-  },
-  { kind: 'sub', text: '포트폴리오의 네 축', figure: 'landscape' },
-  {
-    kind: 'facts',
-    items: [
-      '상업 영상: 촬영 소스를 합성·보정하고 브랜드 메시지를 완성하는 후반 제작',
-      '디지털 콘텐츠: 제품과 서비스의 복잡한 기능을 짧고 명확한 모션 언어로 전달',
-      '공간 영상: 조형물·LED·프로젝션과 영상의 물리적 관계를 설계',
-      '생성형 AI: 텍스트와 이미지를 출발점으로 장면·움직임·서사를 빠르게 탐색',
-    ],
-  },
-];
-
-const researchInterests = [
-  {
-    title: 'AI를 목적이 아닌 재료로 사용',
-    body:
-      '특정 서비스의 화질이나 유행보다 작품의 개념과 맥락을 먼저 설정한다. AI를 써야만 가능한 이미지와 움직임이 무엇인지 묻고, 생성 결과를 작품을 구성하는 하나의 재료로 다룬다.',
-  },
-  {
-    title: '생성에서 연출로 이어지는 통제',
-    body:
-      '프롬프트와 레퍼런스로 장면을 탐색한 뒤 합성·편집·컬러·사운드로 결과를 다시 설계한다. 우연히 얻은 한 컷보다 여러 장면에 걸쳐 유지되는 시각 언어와 서사적 일관성을 중시한다.',
-  },
-  {
-    title: '화면에서 공간과 관람 경험으로',
-    body:
-      '완성 영상을 단순 상영물에 머물게 하지 않고 공간·오브제·빛·관람 동선과 결합한다. 화면의 크기와 재생 장비, 관람자의 거리까지 영상의 일부로 보고 설치 작품으로 확장한다.',
-  },
-];
-
-const researchStages = [
-  {
-    step: '01',
-    title: '개념과 레퍼런스 설계',
-    body:
-      '작업의 주제와 AI를 사용해야 하는 이유를 먼저 정리한다. 레퍼런스 조사와 이미지 생성 실험을 통해 공간, 오브제, 영상의 역할을 구체화하고 스토리보드로 발전시킨다.',
-  },
-  {
-    step: '02',
-    title: '이미지·영상 생성과 후반 제작',
-    body:
-      'ChatGPT·Gemini로 기획을 정리하고 Midjourney 등으로 키 비주얼을 탐색한다. Runway·Kling·MiniMax 계열 영상 생성 결과를 기존 합성·편집 파이프라인과 결합해 장면의 연속성과 완성도를 높인다.',
-  },
-  {
-    step: '03',
-    title: '공간 적용과 반복 개선',
-    body:
-      '프로젝션·모니터·LED 등 실제 출력 환경에서 화면 크기, 동선, 조명, 재생 방식을 점검한다. 크리틱과 설치 테스트를 반복하며 영상·오브제·장비가 하나의 경험으로 읽히도록 보완한다.',
-  },
-];
-
-const OUTLOOK_BLOCKS: Block[] = [
-  { kind: 'sub', text: '두 가지 작품 구상', figure: 'impact' },
-  {
-    kind: 'facts',
-    items: [
-      '**방향 A**: 생성형 AI의 변형·우연성·비선형 서사를 공간과 오브제로 확장하는 설치 작품',
-      '**방향 B**: 구조물을 먼저 설계하고, 프로젝션 매핑 소스를 생성형 AI 비디오로 제작하는 방식',
-      '**초기 구현안**: 기존 미디어파사드 경험을 살릴 수 있는 방향 B로 완성도를 확보한 뒤 방향 A의 가능성을 결합',
-    ],
-  },
-  {
-    kind: 'quote',
-    text: 'AI로 영상을 만드는 데서 끝내지 않고,\nAI로만 가능한 장면과 경험을 설계한다.',
-    source: '작업의 방향',
-  },
-  { kind: 'sub', text: '학기 제작 로드맵', figure: 'after' },
-  {
-    kind: 'facts',
-    items: [
-      '7주 차: 작품 아이디어와 스토리보드 중간발표',
-      '13주 차: 영상·오브제·장비를 포함한 작품 최종 완성',
-      '14주 차: 아트센터 2층 전시장 설치 및 관람 경험 검증',
-    ],
-  },
+const ROLE_FIT = [
+  '**포스트프로덕션 2D TD**로 아트팀과 2D팀을 함께 리딩하며, 광고주, 대행사, 사내 편집팀, 외부\u00A0필름\u00A0프로덕션과 조율했습니다.',
+  '**TVCF 영상 후반**, 웹 에이전시 UI/UX 영상 콘텐츠, **라이브 이벤트**까지 포맷마다 다른 제작\u00A0문제를 풀어 왔습니다.',
 ];
 
 type ExperienceEntry = {
   company: string;
   role: string;
   period: string;
-  from: number;
-  to: number;
-  current?: boolean;
-  stints?: string[];
-  items: FactItem[];
-  /** 회사 웹사이트 — 마우스를 올리면 미리보기 카드, 회사명을 누르면 새 탭 */
+  items: string[];
   site?: SitePreview;
 };
 
 const experience: ExperienceEntry[] = [
-  {
-    company: '리브라텀 파트너스',
-    role: '크리에이티브 디렉터',
-    period: '2025.03 – 현재',
-    from: 2025.17,
-    to: 2026.75,
-    current: true,
+    {
+      company: '리브라텀 파트너스',
+      role: '크리에이티브 디렉터',
+      period: '2025.03 – 현재',
     site: SITE.libratum,
-    items: [
-      '글로벌 IR 콘텐츠의 시각 시스템 설계 및 통합 운영',
-      '데이터·브랜드 내러티브를 영상 언어로 전환하는 제작 파이프라인 운영',
-      '생성형 AI를 후반 공정에 연결하기 위한 실무 워크플로우 탐색',
-    ],
-  },
-  {
-    company: '오픈익스체인지',
-    role: '아트 디렉터',
+      items: [
+      '사모펀드(PEF) 투자 지표와 글로벌 IR 데이터를 인포그래픽, 피치덱, 웹 UI로 설계하는 **시각\u00A0시스템 통합 운영**',
+      '데이터 기반 시각 구조 표준화와 투자자 커뮤니케이션 영상의 **구조 재설계**',
+      '생성형 AI(t2v, i2v)와 바이브코딩 기반 웹 랜딩페이지 설계를 워크플로우에 도입하여 **제작\u00A0리드타임 40% 이상 단축**',
+      ],
+    },
+    {
+      company: '오픈익스체인지',
+      role: '아트 디렉터',
+      period: '2023.09 – 2025.01',
     site: SITE.openexc,
-    period: '2023.09 – 2025.01',
-    from: 2023.67,
-    to: 2025.08,
-    items: [
-      '네이버·크래프톤·하나금융지주·휠라 등 라이브 실적발표 현장 감독',
-      '실시간 IR 스트리밍 환경의 시각 디자인 시스템 운영 및 글로벌 금융 이벤트 시각 커뮤니케이션 총괄',
-      '발표자 중심 포맷의 한계 분석 및 제작 구조 개선',
-    ],
-  },
-  {
-    company: '미디어파사드 프로젝트',
-    role: '미디어 아티스트',
-    period: '2022 – 현재',
-    from: 2022,
-    to: 2026.75,
-    current: true,
-    items: [
-      { text: '아라온 테마파크 2025 / 다중 픽셀 피치 LED 패널 기반 공간 영상 시각 구조 최적화', site: projectPeek('59') },
-      { text: '김해 가야테마파크 2024 / 입체 조형물 대상 프로젝션 매핑 콘텐츠 제작', site: projectPeek('67') },
-      { text: '빛의 공간 2022·2023 / 대형 곡면 구조물 대상 관람 거리 기반 영상 설계 및 왜곡 보정', site: projectPeek('66') },
-    ],
-  },
-  {
-    company: '콘센트릭스 카탈리스트',
-    role: '모션 콘텐츠 팀 리더',
+      items: [
+      '삼성전자 인베스터데이, 네이버, 크래프톤, 휠라, 하나금융지주 **랜딩페이지·홀딩슬라이드 제작, 라이브 현장 총괄**',
+      '**포스코홀딩스IR 채널 운영**, 템플릿 제작 및 외주 관리',
+      ],
+    },
+    {
+      company: '콘센트릭스 카탈리스트',
+      role: '모션 콘텐츠 팀 리더',
+      period: '2020.02 – 2023.08',
     site: SITE.concentrix,
-    period: '2020.02 – 2023.08',
-    from: 2020.08,
-    to: 2023.58,
-    items: [
-      'LG전자·삼성전자 글로벌 .com 페이지 콘텐츠 및 USP 영상 기획·제작',
-      '디자인 팀 매니징 및 다국적 프로젝트 품질 일관성 유지',
-      '69개국 글로벌 웹사이트 운영을 위한 webm/mp4/JSON 포맷 영상 소재 제작 총괄',
-    ],
-  },
-  {
-    company: '포스트프로덕션',
-    role: '2D 테크니컬 디렉터 · 2D 아티스트',
+      items: [
+        '글로벌 IT/가전 기업의 **USP 영상 및 B2C 콘텐츠 기획·제작**',
+      '인하우스 영상 프로덕션 팀 신설과 디자인 팀 매니징으로 **외주 제작비 연 40% 절감** 및 내부\u00A0수익화 전환',
+      '다국적 프로젝트의 품질 일관성을 유지하고 69개국 웹사이트용 webm/mp4/JSON 영상\u00A0소재 **제작\u00A0총괄**',
+      ],
+    },
+    {
+      company: '키스톤 플레이',
+      role: '2D 테크니컬 디렉터',
+      period: '2015.09 – 2019.11',
+    site: SITE.keystone,
+      items: [
+      '포스트 프로덕션 단계 **2D 시각 효과 및 합성** 솔루션\u00A0제공',
+      '**TVCF, 뮤직비디오, 공익광고** 등 영상 프로젝트 테크니컬 디렉팅',
+      '클라이언트 요구사항 기반 **촬영 현장 감독** 및 포스트 파이프라인 설계',
+      ],
+    },
+    {
+      company: '포스트포엠',
+      role: '선임 2D 아티스트',
+      period: '2014.10 – 2015.09',
+      items: [
+        '대규모 미디어 캠페인용 **고해상도 영상 소스** 제작 및 브랜드 모션 그래픽\u00A0연출',
+        '광고 영상 합성 작업의 **품질 기준 수립** 및 주니어 아티스트 업무\u00A0조율',
+        '다양한 포맷의 **납품 소재 관리** 및 후반 제작 공정\u00A0효율화',
+      ],
+    },
+    {
+      company: '빅슨 스튜디오',
+      role: '2D 아티스트',
+      period: '2012.07 – 2014.10',
     site: SITE.vixen,
-    period: '2012.07 – 2019.11',
-    from: 2012.5,
-    to: 2019.83,
-    stints: [
-      '키스톤 플레이 (2015.09–2019.11)',
-      '포스트포엠 (2014.10–2015.09)',
-      '빅슨 스튜디오 (2012.07–2014.10)',
-    ],
-    items: [
-      'TVCF·뮤직비디오·공익광고·바이럴 영상 등 100편 이상의 상업 영상 후반 작업 참여 및 2D 합성·이펙트 디렉팅',
-      '대규모 미디어 캠페인용 고해상도 영상 소스 제작 및 브랜드 모션 그래픽 연출',
-    ],
-  },
-];
+      items: [
+        '매트 페인팅 및 이미지 합성을 통한 **TV 광고 공간 연출** 및 후반 작업',
+        'After Effects·Photoshop 기반 **키잉·리터칭·색보정** 등 광고 후반 전\u00A0공정\u00A0참여',
+        '복수 프로젝트 동시 진행 환경에서 **납기 준수** 및 수정 대응 체계\u00A0구축',
+      ],
+    },
+  ];
 
 const certifications = [
   { name: '투자자산운용사', year: '2026' },
   { name: '컬러리스트기사', year: '2025' },
   { name: '컬러리스트산업기사', year: '2025' },
   { name: '멀티미디어콘텐츠제작전문가', year: '2025' },
-  { name: `ICA DaVinci${' '}Resolve 201`, year: '2024' },
+  { name: `ICA DaVinci${'\u00A0'}Resolve 201`, year: '2024' },
 ];
 
 const skillRows = [
-  { label: '영상 후반', value: `After Effects, DaVinci${' '}Resolve, Flame, Premiere${' '}Pro` },
-  { label: '3D · 생성형 AI', value: 'Blender, Midjourney, ComfyUI' },
+  { label: '영상 후반 작업', value: `After Effects, DaVinci${'\u00A0'}Resolve, Flame, Premiere${'\u00A0'}Pro` },
+  { label: '3D·생성형', value: 'Blender, ComfyUI, TouchDesigner' },
   { label: '라이브 스트리밍', value: 'vMix, Tricaster, OBS를 통한 라이브 송출 경험' },
-  { label: 'AI 파이프라인', value: '이미지·영상 생성형 AI를 후반 제작과 연결한 실무 파이프라인 설계' },
+  { label: 'AI 파이프라인', value: 'AI 기반 영상 디자인 파이프라인 개발' },
   { label: 'Vibe Coding', value: 'Cursor, Claude Code를 통한 웹 및 다양한 HTML 디자인 포맷 제작' },
 ];
 
@@ -442,130 +292,11 @@ const velocityFrom = (history: { y: number; t: number }[], now: number) => {
   return ((last.y - first.y) / (last.t - first.t)) * 1000;
 };
 
-/**
- * 본문은 '레일 표'로 편다 — 왼쪽 열은 소제목 레이블, 오른쪽 열은 내용.
- * 소제목(sub)이 행을 열고, 그 뒤의 사실·문단이 그 행에 들어간다.
- * 명제(quote)는 출처를 레이블로 삼는 한 행이다.
- * 마커는 행 사이의 가는 선 하나뿐이라 글머리 기호가 섞이지 않는다.
- */
-type TableRow =
-  | { kind: 'row'; label: string; content: Exclude<Block, { kind: 'sub' | 'quote' }>[]; figure?: InlineFigureName }
-  | { kind: 'quote'; text: string; source?: string; figure?: InlineFigureName };
-
-const groupBlocks = (blocks: Block[]): TableRow[] => {
-  const rows: TableRow[] = [];
-  let current: Extract<TableRow, { kind: 'row' }> | null = null;
-  for (const block of blocks) {
-    if (block.kind === 'sub') {
-      current = { kind: 'row', label: block.text, content: [], figure: block.figure };
-      rows.push(current);
-    } else if (block.kind === 'quote') {
-      rows.push({ kind: 'quote', text: block.text, source: block.source, figure: block.figure });
-      current = null;
-    } else {
-      if (!current) {
-        current = { kind: 'row', label: '', content: [] };
-        rows.push(current);
-      }
-      current.content.push(block);
-    }
-  }
-  return rows;
-};
-
-const renderBlocks = (blocks: Block[]) => (
-  <div className="cvx-table">
-    {groupBlocks(blocks).map((row, index) =>
-      row.kind === 'quote' ? (
-        <div key={`quote-${index}`} className="cvx-row cvx-row--quote">
-          <p className="cvx-rail-label">{row.source ?? ''}</p>
-          <div className="cvx-cell">
-            <blockquote className="cvx-quote">{row.text}</blockquote>
-            {row.figure && <InlineFigure name={row.figure} />}
-          </div>
-        </div>
-      ) : (
-        <div key={`row-${index}`} className="cvx-row">
-          <h3 className="cvx-rail-label">{row.label}</h3>
-          <div className="cvx-cell">
-            {row.content.map((block, j) =>
-              block.kind === 'facts' ? (
-                <ul key={`facts-${j}`} className="cvx-facts">
-                  {block.items.map((item) => (
-                    <FactRow key={factText(item)} item={item} />
-                  ))}
-                </ul>
-              ) : (
-                <p key={`p-${j}`} className="cvx-para">
-                  {block.text}
-                </p>
-              ),
-            )}
-            {row.figure && <InlineFigure name={row.figure} />}
-          </div>
-        </div>
-      ),
-    )}
-  </div>
-);
-
-const NUMBERED_TOTAL = String(CV_NAV.filter((item) => item.num).length).padStart(2, '0');
-
-/** 표제 — 연구계획서 섹션은 위에 작은 색인(01 / 04), 아래에 제목, 오른쪽 끝까지 내려긋는 선.
-    색인이 없는 섹션도 같은 높이의 빈 줄을 두어 제목 위치가 모든 섹션에서 같다. */
-const SlideHead = ({ num, title }: { num: string | null; title: string }) => (
-  <header className="cvx-head">
-    <p className="cvx-head-kicker" aria-hidden={num ? undefined : true}>
-      {num && (
-        <>
-          <span className="cvx-num">{num}</span>
-          <span className="cvx-head-of" aria-hidden>
-            /
-          </span>
-          <span className="cvx-num cvx-head-total">{NUMBERED_TOTAL}</span>
-        </>
-      )}
-    </p>
-    <h2 className="cvx-head-title">{title}</h2>
-  </header>
-);
-
-const Slide = ({
-  num,
-  title,
-  bodyClassName,
-  children,
-}: {
-  num: string | null;
-  title: string;
-  bodyClassName?: string;
-  children: ReactNode;
-}) => (
-  <section className="cvx-slide">
-    <SlideHead num={num} title={title} />
-    <div className={`cvx-body cvx-scroll${bodyClassName ? ` ${bodyClassName}` : ''}`}>{children}</div>
-  </section>
-);
-
-/* ── 시각자료: 본문 오른쪽 열에 놓는 인라인 SVG ─────────────────────
-   색은 CSS 토큰(--ink·--ink-3·--rule·--now)을 그대로 쓰고, 글꼴은 본문을 상속한다.
-   화면 크기에 따라 SVG가 늘어나므로 viewBox 단위로만 그린다. */
-/** '**굵게**' 표기를 <strong>으로. 그 외 마크업은 없다 */
-const renderEmphasis = (text: string): ReactNode => {
-  const parts = text.split(/\*\*(.+?)\*\*/g);
-  if (parts.length === 1) return text;
-  return parts.map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part));
-};
-
-/* ── 웹 미리보기 팝업(공용) ─────────────────────────────────────
-   마우스를 따라다니는 카드. 스테이지 레이어가 transform을 쓰므로 body에 포털로 그린다. */
+/* 미리보기 카드. 스테이지 레이어가 transform을 쓰므로 body에 포털로 그린다 */
 const SITE_POP_W = 400;
 const SITE_POP_H = 250 + 38;
 const SITE_POP_GAP = 18;
 
-const siteHost = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-
-/* 커서 오른쪽 아래에 두되, 화면 밖으로 나가면 왼쪽·위로 뒤집는다 */
 const placeSitePop = (pt: { x: number; y: number }) => {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -582,7 +313,7 @@ const useSitePeek = (site?: SitePreview) => {
     typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches,
   );
 
-  const onMove = (e: React.PointerEvent) => {
+  const onMove = (e: ReactPointerEvent) => {
     if (!site || !canHover.current || e.pointerType !== 'mouse') return;
     setPointer({ x: e.clientX, y: e.clientY });
   };
@@ -632,708 +363,154 @@ const useSitePeek = (site?: SitePreview) => {
   return { handlers, popup };
 };
 
-/** 사실 한 줄. 사이트가 붙어 있으면 미리보기 + 끝에 ↗ 링크 */
-const FactRow = ({ item }: { item: FactItem }) => {
-  const text = factText(item);
-  const site = typeof item === 'string' ? undefined : item.site;
-  const { handlers, popup } = useSitePeek(site);
+/** `**강조**`만 굵게. 문장 자체는 그대로 두고 훑어 읽을 핵심만 올린다. */
+function renderInlineMd(text: string): ReactNode {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={index}>{part.slice(2, -2)}</strong>
+      : part,
+  );
+}
+
+const JobTitle = ({ job }: { job: ExperienceEntry }) => (
+  <>
+    <span className="cvd-job-company">{job.company}</span>
+    <span className="cvd-job-role"> / {job.role}</span>
+  </>
+);
+
+const JobBlock = ({ job }: { job: ExperienceEntry }) => {
+  const { handlers, popup } = useSitePeek(job.site);
   const openSite = useOpenSite();
+
   return (
-    <li className={site ? 'has-site' : undefined} {...handlers}>
-      {renderEmphasis(text)}
-      {site?.url && (
-        <a
-          href={site.url}
-          className="cvx-fact-link"
-          aria-label={`${site.label ?? siteHost(site.url)} 열기`}
-          aria-haspopup="dialog"
-          onClick={(e) => {
-            e.preventDefault();
-            openSite(site);
-          }}
-        >
-          ↗
-        </a>
-      )}
+    <div className={`cvd-job${job.site ? ' has-site' : ''}`} {...handlers}>
+      <div className="cvd-job-head">
+        <div className="cvd-job-title">
+          {job.site?.url ? (
+            <button
+              type="button"
+              className="cvd-job-link"
+              aria-haspopup="dialog"
+              onClick={() => openSite(job.site, job.company)}
+            >
+              <JobTitle job={job} />
+              <span className="cvd-job-arrow" aria-hidden>
+                ↗
+              </span>
+            </button>
+          ) : (
+            <JobTitle job={job} />
+          )}
+        </div>
+        <span className="cvd-job-period">{job.period}</span>
+      </div>
+      <ul className="cvd-disc">
+        {job.items.map((item) => (
+          <li key={item}>{renderInlineMd(item)}</li>
+        ))}
+      </ul>
       {popup}
-    </li>
-  );
-};
-
-const FIG_INK = 'var(--ink)';
-const FIG_MUTE = 'var(--ink-3)';
-const FIG_RULE = 'var(--rule)';
-const FIG_NOW = 'var(--now)';
-
-/** 그림 1 — 문제(텍스트 보고서) → 변환(AI 생성형 시각화) → 목적(의사결정) */
-const PipelineFigure = () => {
-  const node = (y: number, title: string, sub: string, icon: ReactNode, accent = false) => (
-    <g transform={`translate(0 ${y})`}>
-      <rect x="0.5" y="0.5" width="319" height="72" rx="8" fill="none" stroke={accent ? FIG_INK : FIG_RULE} strokeWidth={accent ? 1.5 : 1} />
-      <g transform="translate(14 12)">{icon}</g>
-      <text x="76" y="30" fontSize="13.5" fontWeight="600" fill={FIG_INK}>{title}</text>
-      <text x="76" y="50" fontSize="11" fill={FIG_MUTE}>{sub}</text>
-    </g>
-  );
-  const arrow = (y: number, label: string) => (
-    <g transform={`translate(0 ${y})`}>
-      <line x1="38" y1="0" x2="38" y2="30" stroke={FIG_NOW} strokeWidth="1.5" />
-      <polygon points="33,24 43,24 38,31" fill={FIG_NOW} />
-      <text x="56" y="19" fontSize="11.5" fontWeight="600" fill={FIG_NOW}>{label}</text>
-    </g>
-  );
-  /* 촘촘한 텍스트 줄 = 읽기 부담 */
-  const widths = [46, 40, 48, 34, 46, 42, 30, 44];
-  const textIcon = (
-    <g stroke={FIG_MUTE} strokeWidth="2" strokeLinecap="round">
-      {widths.map((w, i) => (
-        <line key={i} x1="0" y1={i * 6 + 3} x2={w} y2={i * 6 + 3} />
-      ))}
-    </g>
-  );
-  /* 막대 + 관계망 = 위계와 서사 */
-  const bars: [number, number, number][] = [[0, 30, 18], [8, 20, 28], [16, 36, 12], [24, 12, 36]];
-  const visIcon = (
-    <g>
-      {bars.map(([x, y, h]) => (
-        <rect key={x} x={x} y={y} width="6" height={h} rx="1" fill={FIG_INK} />
-      ))}
-      <g stroke={FIG_NOW} strokeWidth="1.2" fill="var(--paper)">
-        <line x1="36" y1="8" x2="48" y2="24" />
-        <line x1="48" y1="24" x2="38" y2="40" />
-        <line x1="36" y1="8" x2="38" y2="40" />
-        <circle cx="36" cy="8" r="3" />
-        <circle cx="48" cy="24" r="3" />
-        <circle cx="38" cy="40" r="3" />
-      </g>
-    </g>
-  );
-  /* 과녁 = 판단 */
-  const decideIcon = (
-    <g fill="none" stroke={FIG_INK} strokeWidth="1.5">
-      <circle cx="24" cy="24" r="22" stroke={FIG_RULE} />
-      <circle cx="24" cy="24" r="14" />
-      <circle cx="24" cy="24" r="4" fill={FIG_NOW} stroke="none" />
-      <path d="M24 2 v8 M24 38 v8 M2 24 h8 M38 24 h8" />
-    </g>
-  );
-  return (
-    <svg viewBox="0 0 320 288" role="img" aria-label="연구 파이프라인: 텍스트 보고서에서 AI 생성형 시각화를 거쳐 의사결정으로">
-      {node(0, '개념 · 텍스트 · 레퍼런스', '작업의 질문과 시각 방향 설정', textIcon)}
-      {arrow(74, '생성형 AI 탐색')}
-      {node(107, '장면 · 움직임 · 서사', '이미지 생성 · 영상화 · 변주', visIcon, true)}
-      {arrow(181, '후반 제작')}
-      {node(214, '영상 · 공간 경험', '합성 · 편집 · 매핑 · 설치', decideIcon)}
-    </svg>
-  );
-};
-
-/** 그림 2 — 선행 연구 지형도. 가로 = 규칙·구조 ↔ 서사·미학, 세로 = 수동 설계 ↔ 자동 생성.
-    비어 있던 사분면(서사 × 자동 생성)이 본 연구의 자리다. 상자에는 이름만 남긴다. */
-const Quad = ({
-  x,
-  y,
-  title,
-  sub,
-  accent = false,
-  site,
-}: {
-  x: number;
-  y: number;
-  title: string;
-  sub?: string;
-  accent?: boolean;
-  site?: SitePreview;
-}) => {
-  const { handlers, popup } = useSitePeek(site);
-  const openSite = useOpenSite();
-  return (
-    <>
-    <g
-      transform={`translate(${x} ${y})`}
-      {...handlers}
-      onClick={site?.url ? () => openSite(site) : undefined}
-      style={site?.url ? { cursor: 'pointer' } : undefined}
-    >
-      <rect x="0.5" y="0.5" width="139" height="47" rx="8" fill={accent ? FIG_INK : 'none'} stroke={accent ? FIG_INK : FIG_RULE} />
-      {sub ? (
-        <>
-          <text x="12" y="20" fontSize="12" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
-          <text x="12" y="36" fontSize="10" fill={accent ? 'var(--paper)' : FIG_MUTE}>{sub}</text>
-        </>
-      ) : (
-        <text x="12" y="28" fontSize="12" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
-      )}
-      {accent && <circle cx="125" cy="13" r="4" fill={FIG_NOW} />}
-    </g>
-    {popup}
-    </>
-  );
-};
-
-const LandscapeFigure = () => {
-  return (
-    <svg viewBox="0 0 320 138" role="img" aria-label="상업 영상, 디지털 콘텐츠, 공간 영상에서 생성형 AI 설치 작품으로 확장되는 작업 영역">
-      <text x="102" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">평면 · 화면</text>
-      <text x="250" y="11" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">공간 · 경험</text>
-      <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 44) rotate(-90)">기존 제작</text>
-      <text x="0" y="0" fontSize="10" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em" transform="translate(10 110) rotate(-90)">생성 확장</text>
-      <g transform="translate(32 20)">
-        <Quad x={0} y={0} title="상업 영상 · 웹 콘텐츠" />
-        <Quad x={148} y={0} title="미디어파사드" />
-        <Quad x={0} y={66} title="AI 이미지 · 영상" />
-        <Quad x={148} y={66} title="이번 작업" sub="생성형 AI × 설치" accent />
-        <g fill="none" stroke={FIG_NOW} strokeWidth="1.2" strokeDasharray="3 3">
-          <path d="M140 48 L148 66" />
-          <path d="M218 48 L218 66" />
-          <path d="M140 90 L148 90" />
-        </g>
-      </g>
-    </svg>
-  );
-};
-
-
-/** 그림 3 — 데이터 유형 → 시각 변수 매핑(이분 그래프) */
-const MappingFigure = () => {
-  const left = ['텍스트 프롬프트', '레퍼런스 이미지', '실사 소스'];
-  const right = ['형태', '색', '움직임', '시간'];
-  const ly = (i: number) => 22 + i * 30;
-  const ry = (i: number) => 12 + i * 22;
-  const edges: [number, number][] = [[0, 0], [0, 3], [1, 1], [1, 2], [2, 0], [2, 3]];
-  return (
-    <svg viewBox="0 0 320 100" role="img" aria-label="프롬프트와 이미지 소스를 형태·색·움직임·시간의 영상 요소로 전환하는 과정">
-      <g stroke={FIG_RULE} strokeWidth="1">
-        {edges.map(([a, b]) => (
-          <path key={`${a}-${b}`} d={`M118 ${ly(a)} C 170 ${ly(a)}, 190 ${ry(b)}, 236 ${ry(b)}`} fill="none" />
-        ))}
-      </g>
-      <path d={`M118 ${ly(1)} C 170 ${ly(1)}, 190 ${ry(2)}, 236 ${ry(2)}`} fill="none" stroke={FIG_NOW} strokeWidth="1.5" />
-      {left.map((t, i) => (
-        <g key={t}>
-          <rect x="0.5" y={ly(i) - 11} width="112" height="22" rx="4" fill="none" stroke={FIG_RULE} />
-          <text x="12" y={ly(i) + 4} fontSize="11" fill={FIG_INK}>{t}</text>
-          <circle cx="118" cy={ly(i)} r="2.5" fill={FIG_INK} />
-        </g>
-      ))}
-      {right.map((t, i) => (
-        <g key={t}>
-          <circle cx="236" cy={ry(i)} r="2.5" fill={i === 2 ? FIG_NOW : FIG_INK} />
-          <text x="248" y={ry(i) + 4} fontSize="11" fontWeight={i === 2 ? 600 : 400} fill={FIG_INK}>{t}</text>
-        </g>
-      ))}
-      <text x="177" y="96" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">생성·연출 규칙</text>
-    </svg>
-  );
-};
-
-/** 그림 4 — 방대한 텍스트에서 신호를 가려 시각 위계로 배치 */
-const SignalFigure = () => {
-  const lines = [44, 40, 46, 30, 42, 38, 46, 34, 40, 28];
-  const hot = new Set([2, 6]);
-  return (
-    <svg viewBox="0 0 320 100" role="img" aria-label="다양한 생성 결과에서 핵심 이미지를 선별해 장면의 위계와 서사를 구성">
-      <rect x="0.5" y="0.5" width="96" height="99" rx="6" fill="none" stroke={FIG_RULE} />
-      <g strokeWidth="2" strokeLinecap="round">
-        {lines.map((w, i) => (
-          <line key={i} x1="12" y1={12 + i * 8.5} x2={12 + w} y2={12 + i * 8.5} stroke={hot.has(i) ? FIG_NOW : FIG_RULE} />
-        ))}
-      </g>
-      <g transform="translate(112 34)">
-        <path d="M0 0 L40 0 L28 20 L28 34 L12 34 L12 20 Z" fill="none" stroke={FIG_INK} strokeWidth="1.2" strokeLinejoin="round" />
-        <text x="20" y="-8" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">선별 · 편집</text>
-      </g>
-      <line x1="156" y1="50" x2="176" y2="50" stroke={FIG_NOW} strokeWidth="1.5" />
-      <polygon points="174,45 182,50 174,55" fill={FIG_NOW} />
-      <g transform="translate(192 0)">
-        <rect x="0.5" y="0.5" width="127" height="40" rx="4" fill={FIG_INK} />
-        <text x="10" y="18" fontSize="10.5" fontWeight="600" fill="var(--paper)">핵심 장면</text>
-        <text x="10" y="32" fontSize="9" fill="var(--paper)">가장 강하게 · 먼저</text>
-        <rect x="0.5" y="48.5" width="80" height="22" rx="4" fill="none" stroke={FIG_INK} />
-        <text x="10" y="63" fontSize="10" fill={FIG_INK}>장면의 연결</text>
-        <rect x="0.5" y="78.5" width="48" height="16" rx="4" fill="none" stroke={FIG_RULE} />
-        <text x="8" y="90" fontSize="9" fill={FIG_MUTE}>질감</text>
-        <text x="127" y="92" fontSize="9.5" fill={FIG_MUTE} textAnchor="end" letterSpacing="0.06em">시각 일관성</text>
-      </g>
-    </svg>
-  );
-};
-
-/** 그림 5 — 발표자 의존 IR → 데이터가 스스로 움직이는 실시간 IR */
-const LiveIrFigure = () => (
-  <svg viewBox="0 0 320 100" role="img" aria-label="실시간 스트리밍 안에서 데이터가 스스로 변하며 정보를 전하는 IR 모델">
-    <g transform="translate(0 6)">
-      <rect x="0.5" y="0.5" width="118" height="70" rx="6" fill="none" stroke={FIG_RULE} />
-      <circle cx="59" cy="26" r="10" fill="none" stroke={FIG_MUTE} strokeWidth="1.2" />
-      <path d="M38 62 C 38 44, 80 44, 80 62" fill="none" stroke={FIG_MUTE} strokeWidth="1.2" />
-      <text x="59" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">평면 영상</text>
-    </g>
-    <line x1="134" y1="41" x2="154" y2="41" stroke={FIG_NOW} strokeWidth="1.5" />
-    <polygon points="152,36 160,41 152,46" fill={FIG_NOW} />
-    <g transform="translate(172 6)">
-      <rect x="0.5" y="0.5" width="147" height="70" rx="6" fill="none" stroke={FIG_INK} strokeWidth="1.5" />
-      <polyline points="12,52 34,40 56,46 78,24 100,30 122,14 136,20" fill="none" stroke={FIG_INK} strokeWidth="1.5" strokeLinejoin="round" />
-      <circle cx="136" cy="20" r="3.5" fill={FIG_NOW} />
-      <g stroke={FIG_RULE} strokeWidth="1">
-        <line x1="12" y1="60" x2="136" y2="60" />
-        {[12, 43, 74, 105, 136].map((x) => (
-          <line key={x} x1={x} y1="60" x2={x} y2="64" />
-        ))}
-      </g>
-      <circle cx="14" cy="14" r="3" fill={FIG_NOW} />
-      <text x="22" y="17.5" fontSize="9" fontWeight="600" fill={FIG_NOW} letterSpacing="0.08em">SPACE</text>
-      <text x="74" y="86" fontSize="9.5" fill={FIG_MUTE} textAnchor="middle" letterSpacing="0.06em">공간 · 오브제 · 관람</text>
-    </g>
-  </svg>
-);
-
-const InterestFigures = () => (
-  <aside className="cvx-figures" aria-label="시각자료">
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">소스에서 영상 언어로</p>
-      <MappingFigure />
-    </figure>
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">생성 결과의 선별과 연출</p>
-      <SignalFigure />
-    </figure>
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">화면에서 공간으로</p>
-      <LiveIrFigure />
-    </figure>
-  </aside>
-);
-
-/** 그림 6 — 연구 로드맵: 입력(정량·정성) → 세 단계 → 산출물 */
-const RoadmapFigure = () => {
-  const stage = (y: number, num: string, title: string, out: string, accent = false) => (
-    <g transform={`translate(0 ${y})`}>
-      <rect x="0.5" y="0.5" width="319" height="52" rx="6" fill={accent ? FIG_INK : 'none'} stroke={accent ? FIG_INK : FIG_RULE} strokeWidth={accent ? 1.5 : 1} />
-      <text x="14" y="32" fontSize="14" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_NOW} letterSpacing="0.02em">{num}</text>
-      <text x="48" y="22" fontSize="11.5" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
-      <text x="48" y="40" fontSize="10" fill={accent ? 'var(--paper)' : FIG_MUTE}>{out}</text>
-    </g>
-  );
-  const link = (y: number) => (
-    <g transform={`translate(0 ${y})`}>
-      <line x1="24" y1="0" x2="24" y2="14" stroke={FIG_NOW} strokeWidth="1.5" />
-      <polygon points="19,10 29,10 24,16" fill={FIG_NOW} />
-    </g>
-  );
-  return (
-    <svg viewBox="0 0 320 252" role="img" aria-label="제작 로드맵: 개념과 레퍼런스에서 생성형 AI 제작과 공간 테스트로 이어지는 과정">
-      {/* 입력: 정량 + 정성 */}
-      <g>
-        <rect x="0.5" y="0.5" width="154" height="34" rx="6" fill="none" stroke={FIG_RULE} strokeDasharray="3 3" />
-        <text x="12" y="15" fontSize="10.5" fontWeight="600" fill={FIG_INK}>개념 · 맥락</text>
-        <text x="12" y="28" fontSize="9.5" fill={FIG_MUTE}>주제 · 질문 · AI의 역할</text>
-        <rect x="165.5" y="0.5" width="154" height="34" rx="6" fill="none" stroke={FIG_RULE} strokeDasharray="3 3" />
-        <text x="177" y="15" fontSize="10.5" fontWeight="600" fill={FIG_INK}>시각 · 공간 자료</text>
-        <text x="177" y="28" fontSize="9.5" fill={FIG_MUTE}>레퍼런스 · 오브제 · 전시장</text>
-        <path d="M77 35 L77 42 L243 42 L243 35" fill="none" stroke={FIG_RULE} />
-        <line x1="160" y1="42" x2="160" y2="52" stroke={FIG_NOW} strokeWidth="1.5" />
-        <polygon points="155,48 165,48 160,54" fill={FIG_NOW} />
-      </g>
-      {stage(58, '01', '개념 정립 · 스토리보드', '산출: 작품 문장 · 키 비주얼 · 장면 구성')}
-      {link(111)}
-      {stage(128, '02', 'AI 이미지 · 영상 생성과 후반 제작', '산출: 시퀀스 · 합성 · 편집 · 사운드', true)}
-      {link(181)}
-      {stage(198, '03', '구조물 매핑 · 공간 테스트', '산출: 영상 · 오브제 · 장비가 결합된 설치 작품')}
-    </svg>
-  );
-};
-
-/** 그림 7 — 검증 설계: A/B 비교 + 전문가 인터뷰 → 측정 지표 */
-const ValidationFigure = () => (
-  <svg viewBox="0 0 320 132" role="img" aria-label="영상 시퀀스와 실제 공간 테스트를 함께 검토하는 제작 점검 방식">
-    <text x="0" y="10" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">영상과 설치를 함께 점검</text>
-    {/* A: 텍스트 리포트 */}
-    <g transform="translate(0 18)">
-      <rect x="0.5" y="0.5" width="92" height="56" rx="6" fill="none" stroke={FIG_RULE} />
-      <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>A · 화면 시퀀스</text>
-      <g stroke={FIG_RULE} strokeWidth="2" strokeLinecap="round">
-        {[26, 33, 40, 47].map((y, i) => (
-          <line key={y} x1="10" y1={y} x2={[70, 62, 74, 50][i]} y2={y} />
-        ))}
-      </g>
-    </g>
-    {/* B: 자동 생성 영상 */}
-    <g transform="translate(0 84)">
-      <rect x="0.5" y="0.5" width="92" height="46" rx="6" fill="none" stroke={FIG_INK} strokeWidth="1.5" />
-      <text x="10" y="16" fontSize="10.5" fontWeight="600" fill={FIG_INK}>B · 공간 테스트</text>
-      <rect x="10" y="24" width="10" height="16" rx="1" fill={FIG_INK} />
-      <rect x="24" y="30" width="10" height="10" rx="1" fill={FIG_INK} />
-      <rect x="38" y="20" width="10" height="20" rx="1" fill={FIG_NOW} />
-      <polyline points="54,38 62,30 70,33 78,24" fill="none" stroke={FIG_INK} strokeWidth="1.5" />
-    </g>
-    {/* 비교 화살표 */}
-    <line x1="100" y1="46" x2="126" y2="70" stroke={FIG_NOW} strokeWidth="1.2" />
-    <line x1="100" y1="107" x2="126" y2="80" stroke={FIG_NOW} strokeWidth="1.2" />
-    <text x="112" y="80" fontSize="9" fill={FIG_NOW} textAnchor="middle" fontWeight="600">vs</text>
-    {/* 지표 */}
-    <g transform="translate(136 18)">
-      <rect x="0.5" y="0.5" width="184" height="112" rx="6" fill="none" stroke={FIG_RULE} />
-      <text x="12" y="18" fontSize="9.5" fill={FIG_MUTE} letterSpacing="0.06em">검토 항목</text>
-      {[
-        ['개념 전달', 0.82],
-        ['시각 일관성', 0.7],
-        ['공간 적합성', 0.58],
-      ].map(([label, w], i) => (
-        <g key={String(label)} transform={`translate(12 ${30 + i * 26})`}>
-          <text x="0" y="9" fontSize="10.5" fill={FIG_INK}>{label}</text>
-          <rect x="0" y="14" width="160" height="4" rx="2" fill={FIG_RULE} />
-          <rect x="0" y="14" width={160 * Number(w)} height="4" rx="2" fill={i === 2 ? FIG_INK : FIG_NOW} />
-        </g>
-      ))}
-    </g>
-  </svg>
-);
-
-/** 그림 8 — 기대 효과의 파급: 본 연구 → PE 실무 → 자본 시장 → 투자 생태계. 아래로 갈수록 넓어진다 */
-const ImpactFigure = () => {
-  const tiers: [number, string, string][] = [
-    [116, '기존 실무', '합성 · 편집 · 모션'],
-    [184, '생성형 AI 탐색', '이미지 · 영상 변주'],
-    [252, '구조물 프로젝션 매핑', '영상과 물성의 결합'],
-    [320, '설치 작품', '공간 · 동선 · 관람 경험'],
-  ];
-  return (
-    <svg viewBox="0 0 320 224" role="img" aria-label="기대 효과의 파급: 본 연구에서 PE 실무, 자본 시장, 투자 생태계로 넓어진다">
-      {tiers.map(([w, title, sub], i) => {
-        const y = i * 60;
-        const accent = i === 0;
-        return (
-          <g key={title} transform={`translate(0 ${y})`}>
-            <rect x="0.5" y="0.5" width={w - 1} height="42" rx="6" fill={accent ? FIG_INK : 'none'} stroke={accent ? FIG_INK : FIG_RULE} />
-            <text x="14" y="19" fontSize="11" fontWeight="600" fill={accent ? 'var(--paper)' : FIG_INK}>{title}</text>
-            <text x="14" y="33" fontSize="9.5" fill={accent ? 'var(--paper)' : FIG_MUTE}>{sub}</text>
-            {i < tiers.length - 1 && (
-              <g transform="translate(38 45)">
-                <line x1="0" y1="0" x2="0" y2="8" stroke={FIG_NOW} strokeWidth="1.5" />
-                <polygon points="-4,7 4,7 0,12" fill={FIG_NOW} />
-              </g>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-};
-
-/** 그림 9 — 졸업 후 계획: 연구 성과에서 세로 줄기를 타고 세 갈래로 뻗는다 */
-const AfterFigure = () => {
-  const items: [string, string][] = [
-    ['중간발표', '아이디어 · 키 비주얼 · 스토리보드'],
-    ['작품 최종 완성', 'AI 영상 · 오브제 · 장비'],
-    ['Exhibition', '아트센터 2층 설치 · 전시'],
-  ];
-  const cy = (i: number) => 20 + i * 52;
-  return (
-    <svg viewBox="0 -3 320 150" role="img" aria-label="졸업 후 계획: 연구 성과를 상용화, 융합 전문가 활동, 학문적 확장으로 잇는다">
-      <rect x="0.5" y="47.5" width="96" height="50" rx="6" fill={FIG_INK} />
-      <text x="48" y="69" fontSize="11" fontWeight="600" fill="var(--paper)" textAnchor="middle">작품 구상</text>
-      <text x="48" y="84" fontSize="9" fill="var(--paper)" textAnchor="middle">생성형 AI × 공간</text>
-      {/* 줄기: 상자 오른쪽에서 나와 세로로 서고, 각 갈래로 수평 가지 */}
-      <g fill="none" stroke={FIG_NOW} strokeWidth="1.2">
-        <line x1="97" y1="72" x2="112" y2="72" />
-        <line x1="112" y1={cy(0)} x2="112" y2={cy(2)} />
-        {items.map((_, i) => (
-          <line key={i} x1="112" y1={cy(i)} x2="126" y2={cy(i)} />
-        ))}
-      </g>
-      {items.map(([title, sub], i) => (
-        <g key={title} transform={`translate(126 ${cy(i) - 20})`}>
-          <circle cx="0" cy="20" r="2.5" fill={FIG_NOW} />
-          <rect x="6.5" y="0.5" width="187" height="40" rx="6" fill="none" stroke={FIG_RULE} />
-          <text x="18" y="17" fontSize="10.5" fontWeight="600" fill={FIG_INK}>{title}</text>
-          <text x="18" y="31" fontSize="9" fill={FIG_MUTE}>{sub}</text>
-        </g>
-      ))}
-    </svg>
-  );
-};
-
-/** 이름 → 그림. 좁은 화면에서 본문 행 아래에 끼워 넣을 때 쓴다 */
-const INLINE_FIGURES: Record<InlineFigureName, () => JSX.Element> = {
-  pipeline: PipelineFigure,
-  landscape: LandscapeFigure,
-  mapping: MappingFigure,
-  signal: SignalFigure,
-  live: LiveIrFigure,
-  roadmap: RoadmapFigure,
-  validation: ValidationFigure,
-  impact: ImpactFigure,
-  after: AfterFigure,
-};
-
-/** 좁은 화면 전용(넓은 화면에서는 CSS로 숨김). 소제목 없이 본문과 1:1로 붙는다 */
-const InlineFigure = ({ name }: { name: InlineFigureName }) => {
-  const Figure = INLINE_FIGURES[name];
-  return (
-    <div className="cvx-inline-fig" aria-hidden>
-      <Figure />
     </div>
   );
 };
 
-const MethodologyFigures = () => (
-  <aside className="cvx-figures" aria-label="시각자료">
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">제작 로드맵</p>
-      <RoadmapFigure />
-    </figure>
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">영상·공간 점검</p>
-      <ValidationFigure />
-    </figure>
-  </aside>
-);
 
-const OutlookFigures = () => (
-  <aside className="cvx-figures" aria-label="시각자료">
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">평면 영상에서 설치 작품으로</p>
-      <ImpactFigure />
-    </figure>
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">학기 제작 일정</p>
-      <AfterFigure />
-    </figure>
-  </aside>
-);
-
-const MotivationFigures = () => (
-  <aside className="cvx-figures" aria-label="시각자료">
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">작업 파이프라인</p>
-      <PipelineFigure />
-    </figure>
-    <figure className="cvx-figure">
-      <p className="cvx-figure-title">작업 영역의 확장</p>
-      <LandscapeFigure />
-    </figure>
-  </aside>
-);
-
-/** 경력 한 칸. 사이트가 있으면 마우스를 따라다니는 웹 미리보기 카드를 띄운다. */
-const JobCard = ({ job }: { job: ExperienceEntry }) => {
-  const site = job.site;
-  const { handlers, popup } = useSitePeek(site);
-  const openSite = useOpenSite();
-
+function renderSectionBody(id: CvSectionId): ReactNode {
+  void id;
   return (
-    <article
-      className={`cvx-row cvx-job${job.current ? ' is-now' : ''}${site ? ' has-site' : ''}`}
-      {...handlers}
-    >
-      <p className="cvx-rail-label cvx-num cvx-job-period">{job.period}</p>
-      <div className="cvx-cell">
-        <header className="cvx-job-head">
-          <h3 className="cvx-job-title">
-            {site?.url ? (
-              <a
-                href={site.url}
-                className="cvx-job-title-link"
-                aria-haspopup="dialog"
-                onClick={(e) => {
-                  e.preventDefault();
-                  openSite(site, job.company);
-                }}
-              >
-                {job.company}
-                <span className="cvx-job-title-arrow" aria-hidden>↗</span>
-              </a>
-            ) : (
-              job.company
-            )}
-          </h3>
-          <p className="cvx-job-role">{job.role}</p>
-          {job.stints && <p className="cvx-job-stints">{job.stints.join('  ·  ')}</p>}
+    <article className="cvx-slide cvx-slide--doc cvx-scroll">
+      <div className="cvd">
+        <div className="cvd-tools contact-no-print">
+          <button
+            type="button"
+            className="cvd-pdf"
+            onClick={() => {
+    trackResumePdfSave();
+    window.print();
+            }}
+          >
+            이력서 PDF 저장
+          </button>
+        </div>
+
+        <div className="cvd-photo contact-screen-only">
+          <img src={seonghunImage} alt="이성훈 프로필 사진" />
+        </div>
+
+        <header className="cvd-id contact-screen-only">
+          <h1>이성훈</h1>
+          <p>Creative Director / Media Artist</p>
         </header>
-        <ul className="cvx-facts">
-          {job.items.map((item) => (
-            <FactRow key={factText(item)} item={item} />
+
+        <section className="cvd-block">
+          <h2>간단 소개</h2>
+          {PROFILE.split('\n\n').map((paragraph) => (
+            <p key={paragraph}>{renderInlineMd(paragraph)}</p>
           ))}
-        </ul>
-      </div>
-      {popup}
-    </article>
-  );
-};
-
-function renderSectionBody(id: CvSectionId, onOpenTvcf?: () => void): ReactNode {
-  const meta = CV_NAV.find((item) => item.id === id);
-
-  switch (id) {
-    case 'cv-intro':
-      return (
-        <section className="cvx-slide cvx-slide--intro">
-          <div className="cvx-body cvx-scroll">
-            <div className="cvx-intro">
-              {/* 눈썹(소속) → 표제(이름) → 부제(역할): 크기·굵기·행간을 한 세트로 */}
-              <p className="cvx-intro-kicker">
-                <i className="cvx-dot cvx-dot--now" aria-hidden />
-                <span>중앙대학교 첨단영상대학원</span>
-                <span className="cvx-intro-sep" aria-hidden>·</span>
-                <span>예술공학 전공 · 석사과정</span>
-              </p>
-              <h1 className="cvx-intro-name">이성훈</h1>
-              <p className="cvx-intro-role">
-                Creative Director
-                <span className="cvx-intro-sep" aria-hidden>/</span>
-                Media Artist
-              </p>
-            </div>
-
-            <div className="cvx-edu">
-              <p className="cvx-rail-label">학력</p>
-              <ul className="cvx-edu-list">
-                {EDUCATION.map((item) => (
-                  <li key={item.school} className={`cvx-edu-row cvx-rail-row${item.current ? ' is-now' : ''}`}>
-                    <span className="cvx-rail-label cvx-num">{educationPeriod(item)}</span>
-                    <span className="cvx-edu-main">
-                      <span className="cvx-edu-school">{item.school}</span>
-                      <span className="cvx-edu-degree">{item.degree}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="cvx-intro-contact">
-              <a
-                href={`tel:${PHONE.replace(/-/g, '')}`}
-                className="cvx-num"
-                onClick={() => trackOutboundClick('phone', `tel:${PHONE.replace(/-/g, '')}`)}
-              >
-                {PHONE}
-              </a>
-              <i className="cvx-dot cvx-dot--sep" aria-hidden />
-              <a
-                href={`mailto:${EMAIL}`}
-                className="cvx-num"
-                onClick={() => trackOutboundClick('email', `mailto:${EMAIL}`)}
-              >
-                {EMAIL}
-              </a>
-              {onOpenTvcf && (
-                <>
-                  <i className="cvx-dot cvx-dot--sep" aria-hidden />
-                  <button type="button" className="cvx-inline-btn" onClick={onOpenTvcf} aria-haspopup="dialog">
-                    TVCF-Site
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
         </section>
-      );
 
-    case 'cv-motivation':
-      return (
-        <Slide num={meta?.num ?? null} title="작업 배경" bodyClassName="cvx-body--figure">
-          {renderBlocks(MOTIVATION_BLOCKS)}
-          <MotivationFigures />
-        </Slide>
-      );
+        <section className="cvd-block">
+          <h2>강점</h2>
+          <ul className="cvd-disc">
+            {ROLE_FIT.map((item) => (
+              <li key={item}>{renderInlineMd(item)}</li>
+            ))}
+          </ul>
+        </section>
 
-    case 'cv-interests':
-      return (
-        <Slide num={meta?.num ?? null} title="생성형 AI 활용 관점" bodyClassName="cvx-body--figure">
-          <ul className="cvx-list">
-            {researchInterests.map((item, i) => (
-              <li key={item.title} className="cvx-list-row">
-                <div className="cvx-list-rail">
-                  <i className="cvx-dot" aria-hidden />
+        <section className="cvd-block">
+          <h2>경력</h2>
+          {experience.map((job) => (
+            <JobBlock key={`${job.company}-${job.period}`} job={job} />
+          ))}
+        </section>
+
+        <section className="cvd-block">
+          <h2>학력</h2>
+          <ul className="cvd-edu">
+            {EDUCATION.map((item) => (
+              <li key={item.school}>
+                <div className="cvd-edu-head">
+                  <div className="cvd-edu-title">
+                    <span className="cvd-edu-school">{item.school}</span>
+                    <span className="cvd-edu-program"> / {item.program}</span>
+                  </div>
+                  <span className="cvd-edu-date">{item.date}</span>
                 </div>
-                <div className="cvx-list-main">
-                  <h3 className="cvx-list-title">{item.title}</h3>
-                  <p className="cvx-list-body">{item.body}</p>
-                  <InlineFigure name={(['mapping', 'signal', 'live'] as const)[i]} />
-                </div>
+                {item.gpa && (
+                  <p className="cvd-edu-gpa">
+                    평점평균 <strong>{item.gpa}</strong> / 4.5
+                  </p>
+                )}
               </li>
             ))}
           </ul>
-          <InterestFigures />
-        </Slide>
-      );
+        </section>
 
-    case 'cv-methodology':
-      return (
-        <Slide num={meta?.num ?? null} title="제작 방식과 워크플로" bodyClassName="cvx-body--figure">
-          <ol className="cvx-list cvx-list--steps">
-            {researchStages.map((stage, i) => (
-              <li key={stage.step} className="cvx-list-row">
-                <div className="cvx-list-rail">
-                  <span className="cvx-step-num">{stage.step}</span>
-                </div>
-                <div className="cvx-list-main">
-                  <h3 className="cvx-list-title">{stage.title}</h3>
-                  <p className="cvx-list-body">{stage.body}</p>
-                  {i === 0 && <InlineFigure name="roadmap" />}
-                  {i === 2 && <InlineFigure name="validation" />}
-                </div>
-              </li>
-            ))}
-          </ol>
-          <MethodologyFigures />
-        </Slide>
-      );
-
-    case 'cv-outlook':
-      return (
-        <Slide num={meta?.num ?? null} title="향후 작업 방향" bodyClassName="cvx-body--figure">
-          {renderBlocks(OUTLOOK_BLOCKS)}
-          <OutlookFigures />
-        </Slide>
-      );
-
-    case 'cv-experience':
-      return (
-        <Slide num={meta?.num ?? null} title="경력">
-          {/* 레일 = 기간, 내용 = 회사·역할·한 일. 표와 같은 열 시스템 */}
-          <div className="cvx-table cvx-jobs">
-            {experience.map((job) => (
-              <JobCard key={job.company} job={job} />
-            ))}
-          </div>
-        </Slide>
-      );
-
-    case 'cv-skills':
-      return (
-        <Slide num={meta?.num ?? null} title="자격증 및 기술">
-          {/* 두 그룹 모두 같은 레일 표: 왼쪽 = 연도·분류, 오른쪽 = 이름·값.
-              값이 행의 반대편 끝으로 밀려나지 않고 레이블 옆에 붙는다. */}
-          <div className="cvx-group">
-            <p className="cvx-group-label">자격증</p>
-            <ul className="cvx-table cvx-certs">
+        <section className="cvd-block">
+          <h2>자격증 및 기술</h2>
+          <div className="cvd-spec">
+            <strong>자격증</strong>
+            <ul className="cvd-disc">
               {certifications.map((cert) => (
-                <li key={cert.name} className="cvx-row cvx-row--tight">
-                  <span className="cvx-rail-label cvx-num">{cert.year}</span>
-                  <span className="cvx-cert-name">{cert.name}</span>
+                <li key={cert.name}>
+                  <span className="cvd-cert-name">{cert.name}</span>
+                  <span className="cvd-cert-year">{cert.year}</span>
                 </li>
               ))}
             </ul>
+            {skillRows.map((row) => (
+              <div key={row.label} className="cvd-spec-row">
+                <strong>{row.label}</strong>
+                <span>{row.value}</span>
+              </div>
+            ))}
           </div>
-
-          <div className="cvx-group">
-            <p className="cvx-group-label">기술</p>
-            <dl className="cvx-table cvx-spec-list">
-              {skillRows.map((row) => (
-                <div key={row.label} className="cvx-row cvx-row--tight">
-                  <dt className="cvx-rail-label">{row.label}</dt>
-                  <dd className="cvx-spec-value">{row.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </Slide>
-      );
-
-    default:
-      return null;
-  }
+        </section>
+      </div>
+    </article>
+  );
 }
 
 const ContactPage = () => {
@@ -1470,6 +647,9 @@ const ContactPage = () => {
     let wheelScrolledInner = false;
 
     const onWheel = (event: WheelEvent) => {
+      // 한 장짜리 이력서는 섹션을 넘기지 않고, 스테이지가 문서처럼 내려간다
+      if (CV_NAV.length <= 1) return;
+
       const now = event.timeStamp;
       const delta =
         event.deltaMode === 1
@@ -1515,6 +695,23 @@ const ContactPage = () => {
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (tvcfOpenRef.current) return; // 시트가 열려 있으면 뒤의 섹션은 움직이지 않는다
+      if (CV_NAV.length <= 1) {
+        const page = window.innerHeight * 0.86;
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          window.scrollBy({ top: 80 });
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          window.scrollBy({ top: -80 });
+        } else if (event.key === 'PageDown') {
+          event.preventDefault();
+          window.scrollBy({ top: page });
+        } else if (event.key === 'PageUp') {
+          event.preventDefault();
+          window.scrollBy({ top: -page });
+        }
+        return;
+      }
       if (event.key === 'ArrowDown' || event.key === 'PageDown') {
         event.preventDefault();
         navigate(activeIndexRef.current + 1);
@@ -1846,7 +1043,6 @@ const ContactPage = () => {
           --s5: 2.5rem;
           --s6: 3rem;
 
-          --layout-sidebar-w: 18rem;
           --layout-info-w: 21rem;
           --layout-meta: 1rem;
           --cv-mobile-nav-h: 3.25rem;
@@ -1858,11 +1054,11 @@ const ContactPage = () => {
         }
 
         @media (min-width: 1920px) {
-          .contact-page { --layout-sidebar-w: 20rem; --layout-info-w: 23rem; --layout-meta: 1.0625rem; }
+          .contact-page { --layout-info-w: 23rem; --layout-meta: 1.0625rem; }
         }
 
         @media (min-width: 2560px) {
-          .contact-page { --layout-sidebar-w: 22rem; --layout-info-w: 27rem; --layout-meta: 1.1875rem; }
+          .contact-page { --layout-info-w: 27rem; --layout-meta: 1.1875rem; }
         }
 
         /* ── 스테이지 ────────────────────────────────────────────── */
@@ -1934,6 +1130,477 @@ const ContactPage = () => {
         }
 
         .cvx-slide--intro { grid-template-rows: minmax(0, 1fr); }
+
+        /* 이력서는 슬라이드가 아니라 긴 문서다.
+           캔버스·레이어의 absolute 고정을 풀어야 스테이지 scrollHeight가 본문만큼 늘어난다. */
+        .cv-stage-viewport:has(.cvx-slide--doc) {
+          overflow: visible;
+          block-size: auto;
+          min-block-size: calc(100dvh - var(--layout-header-h));
+        }
+
+        .cv-stage-viewport:has(.cvx-slide--doc) .cv-stage-canvas {
+          position: relative;
+          inset: auto;
+          padding: 0;
+          block-size: auto;
+        }
+
+        .cv-stage-viewport:has(.cvx-slide--doc) .cv-stage-frame,
+        .cv-stage-viewport:has(.cvx-slide--doc) .cv-stage-layer {
+          position: relative;
+          inset: auto;
+          block-size: auto;
+          min-block-size: 0;
+          will-change: auto;
+        }
+
+        .cv-stage-viewport:has(.cvx-slide--doc) .contact-cv {
+          block-size: auto;
+          min-block-size: 0;
+        }
+
+        .cvx-slide--doc {
+          display: block;
+          block-size: auto;
+          min-block-size: 0;
+          overflow: visible;
+          padding: 2.5rem 1.25rem 4rem;
+        }
+
+        .cvd {
+          /* 본문 1을 기준으로 이름 φ², 절 φ, 직함 √φ, 기간 1/φ */
+          --cv-phi: 1.618;
+          --cv-body: var(--layout-body);
+          --cv-meta: max(0.8125rem, calc(var(--cv-body) / var(--cv-phi)));
+          --cv-lead: calc(var(--cv-body) * 1.272);
+          --cv-h2: calc(var(--cv-body) * var(--cv-phi));
+          --cv-h1: calc(var(--cv-body) * var(--cv-phi) * var(--cv-phi));
+          max-inline-size: 38em;
+          margin-inline: auto;
+          color: #374151;
+          font-size: var(--cv-body);
+          font-weight: 400;
+          line-height: 1.75;
+          word-break: keep-all;
+          line-break: strict;
+          overflow-wrap: break-word;
+          text-wrap: pretty;
+        }
+
+        .cvd strong {
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .cvd-tools { display: flex; justify-content: flex-end; margin-block-end: 1.25rem; }
+
+        .cvd-pdf {
+          border: 1px solid #d1d5db;
+          border-radius: 999px;
+          padding: 0.5rem 1rem;
+          background: transparent;
+          color: #1f2937;
+          font: inherit;
+          font-size: 0.875rem;
+          cursor: pointer;
+        }
+
+        .cvd-pdf:hover { opacity: 0.7; }
+
+        .cvd-photo {
+          display: flex;
+          justify-content: center;
+          margin-block-end: 2.5rem;
+        }
+
+        .cvd-photo img {
+          inline-size: 60%;
+          max-inline-size: 12rem;
+          aspect-ratio: 3 / 4;
+          object-fit: cover;
+          background: #000;
+        }
+
+        .cvd-id {
+          margin-block-end: 2rem;
+          padding-block-end: 1.25rem;
+          border-block-end: 2px solid #000;
+        }
+
+        .cvd-id h1 {
+          margin: 0 0 0.2rem;
+          font-size: var(--cv-h1);
+          font-weight: 700;
+          line-height: 1.15;
+          letter-spacing: -0.03em;
+          color: #111827;
+        }
+
+        .cvd-id p {
+          margin: 0;
+          font-size: var(--cv-lead);
+          font-weight: 500;
+          line-height: 1.4;
+          color: #4b5563;
+        }
+
+        .cvd-block { margin-block-end: 3.25rem; }
+        .cvd-block:last-child { margin-block-end: 0; }
+
+        .cvd-block h2 {
+          margin: 0 0 1.1rem;
+          padding-block-end: 0.35rem;
+          border-block-end: 1px solid #111827;
+          font-size: var(--cv-h2);
+          font-weight: 700;
+          line-height: 1.3;
+          letter-spacing: -0.02em;
+          color: #111827;
+        }
+
+        .cvd-block > p { margin: 0; color: #374151; line-height: 1.75; }
+
+        .cvd-id h1,
+        .cvd-block h2,
+        .cvd-job-title { text-wrap: balance; }
+
+        .cvd-block > p + p { margin-top: 0.45rem; }
+
+        .cvd-disc {
+          margin: 0;
+          padding-inline-start: 1.25rem;
+          line-height: 1.4;
+        }
+        .cvd-disc li + li { margin-top: 0.08rem; }
+
+        .cvd-job { margin-block-end: 2.35rem; }
+        .cvd-job:last-child { margin-block-end: 0; }
+
+        .cvd-job-head { margin-block-end: 0.85rem; line-height: 1.35; }
+        .cvd-job-title {
+          font-size: var(--cv-lead);
+          font-weight: 500;
+          color: #4b5563;
+        }
+        .cvd-job-company { font-weight: 700; color: #111827; }
+        .cvd-job-role { font-weight: 500; }
+
+        .cvd-job.has-site { cursor: pointer; }
+
+        .cvd-job-link {
+          display: inline;
+          max-inline-size: 100%;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          font-weight: inherit;
+          line-height: inherit;
+          text-align: inherit;
+          white-space: normal;
+          cursor: pointer;
+        }
+
+        .cvd-job-link:hover { opacity: 0.7; }
+
+        .cvd-job-arrow {
+          display: inline-block;
+          margin-inline-start: 0.3rem;
+          font-size: 0.85em;
+          color: #6b7280;
+        }
+
+        .cvd-job.has-site:hover .cvd-job-arrow { color: var(--now); translate: 0.1em -0.25em; }
+        .cvd-job-period {
+          display: block;
+          margin-top: 0.125rem;
+          font-size: var(--cv-meta);
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+          color: #4b5563;
+        }
+
+        .cvd-edu { margin: 0; padding: 0; list-style: none; }
+        .cvd-edu li + li { margin-top: 1.75rem; }
+        .cvd-edu-head {
+          font-size: var(--cv-lead);
+          font-weight: 500;
+          color: #4b5563;
+        }
+        .cvd-edu-school { font-weight: 700; color: #111827; }
+        .cvd-edu-program { font-weight: 500; color: #4b5563; }
+        .cvd-edu-date {
+          display: block;
+          margin-top: 0.125rem;
+          font-size: var(--cv-meta);
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+          color: #4b5563;
+        }
+        .cvd-edu-gpa {
+          margin: 0.15rem 0 0;
+          font-size: var(--cv-meta);
+          font-weight: 400;
+          color: #6b7280;
+        }
+        .cvd-edu-gpa strong {
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .cvd-cert-name { font-weight: 600; color: #111827; }
+        .cvd-cert-year {
+          margin-inline-start: 0.4rem;
+          font-size: var(--cv-meta);
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+          color: #6b7280;
+        }
+
+        .cvd-spec {
+          display: grid;
+          grid-template-columns: 10.5rem minmax(0, 1fr);
+          column-gap: 1.25rem;
+          row-gap: 0.15rem;
+          align-items: baseline;
+        }
+        .cvd-spec-row { display: contents; }
+        .cvd-spec > strong:not(:first-of-type) { margin-top: 1.35rem; }
+        .cvd-spec strong {
+          font-weight: 700;
+          color: #111827;
+        }
+        .cvd-spec-row > span { font-weight: 400; color: #374151; }
+        .cvd-spec .cvd-disc {
+          margin: 0;
+          padding-inline-start: 0;
+          list-style: none;
+        }
+
+        @media (min-width: 768px) {
+          .cvx-slide--doc { padding-inline: 2.5rem; }
+          .cvd-photo { justify-content: flex-start; }
+          .cvd-photo img { inline-size: 12rem; block-size: 15rem; }
+          .cvd-job-head,
+          .cvd-edu-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: baseline;
+            column-gap: 1.25rem;
+          }
+          .cvd-job-title,
+          .cvd-edu-title { min-inline-size: 0; }
+          .cvd-job-period,
+          .cvd-edu-date { margin-top: 0; white-space: nowrap; }
+        }
+
+        /* 이력서 한 장.
+           이전 배치의 문제: 섹션이 하나인데 왼쪽 목차가 폭을 먹고,
+           경력을 오른쪽 절반에 넣은 뒤 넓은 화면 규칙이 그 안에서 다시 2단으로 접어
+           카드가 1/4 폭이 되며, overflow:hidden 때문에 아래가 잘렸다. */
+        .cv-stage-canvas:has(.cvx-slide--sheet) {
+          padding-block: clamp(1rem, 2.2cqi, 1.6rem);
+          padding-inline: clamp(1.25rem, 2.4cqi, 2.25rem);
+        }
+
+        .cvx-slide--sheet {
+          --t-base: clamp(0.78rem, 0.95cqi, 0.98rem);
+          --t-display: calc(var(--t-base) * 2.35);
+          display: flex;
+          flex-direction: column;
+          gap: 0.85rem;
+          block-size: 100%;
+          min-block-size: 0;
+          overflow: auto;
+        }
+
+        .cvx-sheet-name {
+          margin: 0.1rem 0 0;
+          font-size: var(--t-display);
+          font-weight: 700;
+          line-height: 1;
+          letter-spacing: -0.03em;
+        }
+
+        .cvx-sheet-role {
+          margin: 0.25rem 0 0;
+          font-size: var(--t-lead);
+          font-weight: 400;
+          color: var(--ink-2);
+        }
+
+        .cvx-sheet-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 1rem 2rem;
+          padding-block-end: 0.65rem;
+          border-block-end: 1px solid var(--ink);
+        }
+
+        .cvx-sheet-contact {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 0.45rem;
+          margin: 0;
+          font-size: var(--t-meta);
+        }
+
+        .cvx-sheet-label {
+          margin: 0 0 0.3rem;
+          font-size: var(--t-meta);
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .cvx-sheet-profile {
+          margin: 0;
+          max-inline-size: 78rem;
+          font-size: var(--t-body);
+          font-weight: 300;
+          line-height: 1.6;
+          color: #2f343a;
+        }
+
+        .cvx-sheet-career { min-inline-size: 0; }
+
+        .cvx-sheet-foot {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) minmax(0, 1.15fr);
+          gap: 1rem 1.75rem;
+          padding-block-start: 0.15rem;
+        }
+
+        .cvx-sheet-interests,
+        .cvx-sheet-edu {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+        }
+
+        .cvx-sheet-interests li {
+          position: relative;
+          padding-inline-start: 0.75rem;
+          font-size: var(--t-meta);
+          font-weight: 300;
+          line-height: 1.4;
+          color: #2f343a;
+        }
+
+        .cvx-sheet-interests li + li { margin-top: 0.18rem; }
+
+        .cvx-sheet-interests li::before {
+          content: '';
+          position: absolute;
+          inset-inline-start: 0;
+          inset-block-start: 0.45em;
+          inline-size: 0.28rem;
+          block-size: 0.28rem;
+          border-radius: 50%;
+          background: var(--ink);
+        }
+
+        .cvx-sheet-edu li {
+          font-size: var(--t-meta);
+          line-height: 1.35;
+        }
+
+        .cvx-sheet-edu li + li { margin-top: 0.28rem; }
+
+        .cvx-sheet-edu-school {
+          display: block;
+          font-weight: 600;
+        }
+
+        .cvx-sheet-edu-degree {
+          display: block;
+          font-weight: 300;
+          color: var(--ink-2);
+        }
+
+        .cvx-slide--sheet .cvx-jobs {
+          grid-column: 1 / -1;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          column-gap: 2rem;
+        }
+
+        .cvx-slide--sheet .cvx-jobs .cvx-row {
+          grid-template-columns: minmax(0, 1fr);
+          column-gap: 0;
+          padding-block: 0.55rem 0.7rem;
+        }
+
+        .cvx-slide--sheet .cvx-jobs .cvx-row:nth-child(-n + 2) {
+          border-block-start: 0;
+          padding-block-start: 0;
+        }
+
+        .cvx-slide--sheet .cvx-jobs .cvx-job-period {
+          grid-area: 1 / 1;
+          justify-self: end;
+          padding-block-start: 0.15rem;
+        }
+
+        .cvx-slide--sheet .cvx-jobs .cvx-cell {
+          grid-area: 1 / 1;
+          max-inline-size: none;
+          row-gap: 0.25rem;
+        }
+
+        .cvx-slide--sheet .cvx-jobs .cvx-job-head {
+          padding-inline-end: 8.25rem;
+        }
+
+        .cvx-slide--sheet .cvx-facts li {
+          padding-block: 0.06rem;
+          line-height: 1.4;
+          font-size: var(--t-meta);
+        }
+
+        .cvx-slide--sheet .cvx-job .cvx-facts li:first-child {
+          padding-block-start: 0.28rem;
+        }
+
+        .cvx-slide--sheet .cvx-job-title {
+          font-size: var(--t-lead);
+        }
+
+        .cvx-slide--sheet .cvx-cert-name,
+        .cvx-slide--sheet .cvx-spec-value,
+        .cvx-slide--sheet .cvx-rail-label {
+          font-size: var(--t-meta);
+        }
+
+        .cvx-slide--sheet .cvx-sheet-certs .cvx-row,
+        .cvx-slide--sheet .cvx-sheet-skills .cvx-row {
+          grid-template-columns: 6.6rem minmax(0, 1fr);
+          column-gap: 0.6rem;
+        }
+
+        .cvx-slide--sheet .cvx-spec-value {
+          max-inline-size: none;
+          line-height: 1.45;
+        }
+
+        @container cvstage (max-width: 860px) {
+          .cvx-sheet-head { flex-direction: column; align-items: flex-start; }
+          .cvx-sheet-contact { justify-content: flex-start; }
+          .cvx-slide--sheet .cvx-jobs,
+          .cvx-sheet-foot { grid-template-columns: 1fr; }
+          .cvx-slide--sheet .cvx-jobs .cvx-row:nth-child(-n + 2) {
+            border-block-start: 1px solid var(--rule);
+            padding-block-start: 0.55rem;
+          }
+          .cvx-slide--sheet .cvx-jobs .cvx-row:first-child {
+            border-block-start: 0;
+            padding-block-start: 0;
+          }
+        }
 
         .cvx-slide--intro .cvx-body {
           align-content: space-between;
@@ -2631,6 +2298,17 @@ const ContactPage = () => {
           .cvx-job .cvx-facts li:first-child { padding-block-start: 0.3rem; }
         }
 
+        /* 한 장 이력서의 경력 칸은 위 58rem 규칙보다 촘촘해야 한다 */
+        .cvx-slide--sheet .cvx-job .cvx-facts li {
+          font-size: var(--t-meta);
+          line-height: 1.4;
+          padding-block: 0.06rem;
+        }
+
+        .cvx-slide--sheet .cvx-job .cvx-facts li:first-child {
+          padding-block-start: 0.22rem;
+        }
+
         /* ── 좁은 스테이지: 격자 해제 ────────────────────────────── */
         @container cvstage (inline-size < 44rem) {
           .cvx-intro,
@@ -2672,6 +2350,19 @@ const ContactPage = () => {
             padding-block-start: calc(var(--cv-mobile-nav-h) + var(--s2));
             padding-inline: 1.25rem;
           }
+
+          .contact-page:not(:has(.cv-mobile-nav)) .cv-stage-canvas {
+            padding-block-start: 1.15rem;
+          }
+
+          .cv-stage-canvas:has(.cvx-slide--doc) { padding: 0; }
+
+          .cvd-spec {
+            grid-template-columns: minmax(0, 1fr);
+            row-gap: 0.2rem;
+          }
+          .cvd-spec > strong { margin-top: 1.15rem; }
+          .cvd-spec > strong:first-of-type { margin-top: 0; }
         }
 
         /* ── 응답: 피드백은 누르는 순간, 즉시 ─────────────────────────
@@ -2864,6 +2555,8 @@ const ContactPage = () => {
           .contact-no-print,
           .cv-stage-screen { display: none !important; }
 
+          .contact-print-area .contact-screen-only { display: none !important; }
+
           .contact-print-only { display: block !important; }
 
           .cvx-slide {
@@ -2875,6 +2568,8 @@ const ContactPage = () => {
             --gutter: 0.5rem;
             block-size: auto;
           }
+
+          .cvd { --cv-body: 10pt; }
 
           .cvx-body { overflow: visible; block-size: auto; }
           .cv-print-section {
@@ -2922,8 +2617,8 @@ const ContactPage = () => {
       `}</style>
 
       <div className="flex" style={{ minHeight: 'calc(100vh - var(--layout-header-h))' }}>
-        {/* 목차 — 번호는 논지, 점은 기록 */}
-        <aside
+        {/* 목차 — 섹션이 둘 이상일 때만. 한 장 이력서에서는 폭만 잡아먹는다 */}
+        {CV_NAV.length > 1 && <aside
           className="contact-no-print hidden md:flex flex-col flex-shrink-0 fixed left-0 z-30 bg-white"
           style={{
             top: 'var(--layout-header-h)',
@@ -2973,9 +2668,12 @@ const ContactPage = () => {
               );
             })}
           </nav>
-        </aside>
+        </aside>}
 
-        <div className="flex-shrink-0 hidden md:block" style={{ width: 'var(--layout-sidebar-w)' }} />
+        <div
+          className="contact-no-print flex-shrink-0 hidden md:block border-r border-gray-200"
+          style={{ width: 'var(--layout-sidebar-w)' }}
+        />
 
         {/* 연락처 */}
         <div
@@ -3015,8 +2713,8 @@ const ContactPage = () => {
                   onClick={() => trackOutboundClick(row.key, row.href)}
                 >
                   {row.value}
-                </a>
-              </div>
+              </a>
+            </div>
             ))}
             {(info.socials?.linkedin || portfolioUrl) && (
               <div
@@ -3058,9 +2756,8 @@ const ContactPage = () => {
           </div>
         </div>
 
-        {/* 모바일 목차 */}
-        {/* 반투명 머티리얼 — 본문 위에 떠 있는 기능층. 색은 아래에 두고 글자는 대비로 세운다 */}
-        <div
+        {/* 모바일 목차 — 섹션이 하나면 바 자체가 없다 */}
+        {CV_NAV.length > 1 && <div
           className="cv-mobile-nav contact-no-print md:hidden fixed left-0 right-0 z-20"
           style={{ top: 'var(--layout-header-h)' }}
         >
@@ -3076,8 +2773,8 @@ const ContactPage = () => {
                 {label}
               </button>
             ))}
-          </div>
-        </div>
+            </div>
+        </div>}
 
         {/* 고정 스테이지: 휠·키는 섹션 전환, 터치는 슬라이드를 직접 끈다 */}
         <div
@@ -3104,16 +2801,16 @@ const ContactPage = () => {
                       aria-hidden={role !== 'active' ? true : undefined}
                     >
                       <div id={id} data-cv-section={id} className="contact-cv w-full h-full min-h-0">
-                        {renderSectionBody(id, openTvcf)}
-                      </div>
+                        {renderSectionBody(id)}
+                  </div>
                     </motion.div>
                   );
                 })}
               </AnimatePresence>
-            </div>
+                </div>
           </div>
-        </div>
-      </div>
+                </div>
+              </div>
 
       {sheet && (
         <TvcfSheet
@@ -3129,15 +2826,14 @@ const ContactPage = () => {
       {/* 인쇄용 전체 본문 */}
       <div className="contact-print-area contact-print-only px-8 py-8">
         <header className="contact-print-header">
-          <p className="contact-print-program">{PROGRAM}</p>
           <h1 className="contact-print-name">이성훈</h1>
           <p className="contact-print-role">Creative Director / Media Artist</p>
-          <p className="contact-print-doc">Statement of Purpose &amp; Research Plan</p>
-        </header>
+          <p className="contact-print-doc">Curriculum Vitae</p>
+                </header>
         {CV_NAV.map(({ id }) => (
           <section key={id} className="cv-print-section">
             {renderSectionBody(id)}
-          </section>
+              </section>
         ))}
       </div>
     </motion.div>
