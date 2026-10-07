@@ -14,8 +14,8 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${encodeURI(path)}`;
 
 export const info: Info = {
   name: "Seonghun.Lee",
-  title: "Creative Director · Media Artist",
-  description: "13년차 현업 크리에이터입니다. TVCF·브랜드·미디어파사드·IR 콘텐츠를 만들어 왔고, 지금은 생성형 AI를 제작 파이프라인에 연결하는 작업을 이어가고 있습니다.",
+  title: "Creative Director",
+  description: "13년차 현업 크리에이터입니다. TVCF·브랜드·IR 콘텐츠를 만들어 왔고, 지금은 생성형 AI를 제작 파이프라인에 연결하는 작업을 이어가고 있습니다.",
   location: "Seoul, Korea",
   email: "huuuuun.88@gmail.com",
   clients: [
@@ -792,11 +792,18 @@ function orderTvcfByTheme(
   return [...listed, ...rest];
 }
 
-/** 자동 정렬 뒤에 특정 작품을 고정 순번(1부터)으로 옮긴다. 발표 동선용.
-    예: { '42': 4 } → 넥센타이어를 4번으로. 주제 순서를 깨므로 필요할 때만 쓴다. */
-const PINNED_ORDER: Record<string, number> = {};
+/** 채용 포트폴리오에서 맨 앞에 보여줄 작품. 나머지 순서는 그대로 이어진다. */
+const LEAD_IDS = [
+  '23', // 포스코홀딩스 IR
+  '5', // KRAFTON 실적발표
+  '64', // 하나금융지주
+  '35-1', // Libratum Investment 사이트 구축
+  '35', // IR 이벤트 · 글로벌 상장 및 투자 전략 세미나
+  '34-1', // LG전자 .COM 글로벌 웹사이트 리뉴얼
+  '34', // LG 인스타그램 운영
+];
 
-/** 포트폴리오 노출 순서: TVCF(주제별) → Web UI/UX → IR → 미디어파사드 → 기타 → 고정 순번 적용 */
+/** 포트폴리오 노출 순서: 채용용 선행 작품 → TVCF(주제별) → Web UI/UX → IR → 기타 */
 export const projects: Project[] = (() => {
   const withMeta = projectsRaw.map((project, index) => ({
     project,
@@ -817,12 +824,12 @@ export const projects: Project[] = (() => {
     ordered.push(...sorted.map(({ project }) => project));
   }
 
-  for (const [id, position] of Object.entries(PINNED_ORDER)) {
-    const from = ordered.findIndex((project) => project.id === id);
-    if (from < 0) continue;
-    const [moved] = ordered.splice(from, 1);
-    ordered.splice(Math.min(Math.max(position - 1, 0), ordered.length), 0, moved);
-  }
+  const lead = LEAD_IDS.flatMap((id) => {
+    const project = ordered.find((item) => item.id === id);
+    return project ? [project] : [];
+  });
+  const leadSet = new Set(lead.map((project) => project.id));
+  const rest = ordered.filter((project) => !leadSet.has(project.id));
 
-  return ordered;
+  return [...lead, ...rest];
 })();

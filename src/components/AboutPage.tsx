@@ -297,16 +297,6 @@ const AboutPage = () => {
                   Github
                 </a>
               )}
-              {info.socials.linkedin && (
-                <a
-                  href={info.socials.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-normal hover:opacity-70 transition-opacity"
-                >
-                  Linkedin
-                </a>
-              )}
             </div>
           </div>
         )}

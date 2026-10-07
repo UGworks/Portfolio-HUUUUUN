@@ -42,6 +42,8 @@ type SitePreview = {
   label?: string;
   /** false면 iframe 삽입을 막는 사이트 → 시트에 캡처 이미지를 띄운다 */
   embed?: boolean;
+  /** 캡처 대신 카드 안에서 페이지를 축소해 보여준다 */
+  livePreview?: boolean;
   kicker?: string;
 };
 
@@ -347,12 +349,21 @@ const useSitePeek = (site?: SitePreview) => {
                 preload="metadata"
                 className="cvx-site-pop-video"
               />
-            ) : (
+            ) : site.preview ? (
               <img src={site.preview} alt="" width={1280} height={800} draggable={false} />
-            )}
+            ) : site.livePreview && site.url ? (
+              <div className="cvx-site-pop-live">
+                <iframe
+                  src={site.url}
+                  title=""
+                  tabIndex={-1}
+                  style={{ transform: `scale(${SITE_POP_W / 1280})` }}
+                />
+              </div>
+            ) : null}
             <div className="cvx-site-pop-bar">
               <span className="cvx-site-pop-host">{site.url ? siteHost(site.url) : site.label}</span>
-              <span className="cvx-site-pop-hint">{site.url ? '클릭하면 새 탭에서 열림' : '포트폴리오 작품'}</span>
+              <span className="cvx-site-pop-hint">{site.url ? '클릭하면 시트에서 열림' : '포트폴리오 작품'}</span>
             </div>
           </motion.div>
         )}
@@ -371,6 +382,36 @@ function renderInlineMd(text: string): ReactNode {
       : part,
   );
 }
+
+const ContactSiteLink = ({
+  site,
+  title,
+  className,
+  children,
+}: {
+  site: SitePreview;
+  title: string;
+  className?: string;
+  children: ReactNode;
+}) => {
+  const { handlers, popup } = useSitePeek(site);
+  const openSite = useOpenSite();
+
+  return (
+    <>
+      <button
+        type="button"
+        className={className ?? 'cvx-inline-btn'}
+        aria-haspopup="dialog"
+        {...handlers}
+        onClick={() => openSite(site, title, site.kicker)}
+      >
+        {children}
+      </button>
+      {popup}
+    </>
+  );
+};
 
 const JobTitle = ({ job }: { job: ExperienceEntry }) => (
   <>
@@ -426,8 +467,8 @@ function renderSectionBody(id: CvSectionId): ReactNode {
             type="button"
             className="cvd-pdf"
             onClick={() => {
-    trackResumePdfSave();
-    window.print();
+              trackResumePdfSave();
+              window.print();
             }}
           >
             이력서 PDF 저장
@@ -440,7 +481,7 @@ function renderSectionBody(id: CvSectionId): ReactNode {
 
         <header className="cvd-id contact-screen-only">
           <h1>이성훈</h1>
-          <p>Creative Director / Media Artist</p>
+          <p>Creative Director</p>
         </header>
 
         <section className="cvd-block">
@@ -516,7 +557,6 @@ function renderSectionBody(id: CvSectionId): ReactNode {
 const ContactPage = () => {
   const phone = PHONE;
   const email = EMAIL;
-  const portfolioUrl = info.socials?.website;
   const stageRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
@@ -530,11 +570,6 @@ const ContactPage = () => {
     setSheet(content);
     setTvcfOpen(true);
   }, []);
-  const openTvcf = useCallback(() => {
-    if (!portfolioUrl) return;
-    trackOutboundClick('tvcf_site', portfolioUrl);
-    openSheet({ url: portfolioUrl, title: 'HUUUUU.N 포트폴리오', kicker: 'TVCF' });
-  }, [portfolioUrl, openSheet]);
   const closeTvcf = useCallback(() => setTvcfOpen(false), []);
 
   /* 화면에 올라오는 슬라이드 = 활성 슬라이드 + (드래그 중이면) 옆에서 비치는 슬라이드.
@@ -2409,6 +2444,22 @@ const ContactPage = () => {
         .cvx-inline-btn:hover { color: var(--ink); }
         .cvx-inline-btn:active { color: var(--ink); opacity: 0.6; transition: none; }
 
+        .cvx-contact-portfolio {
+          padding: 0;
+          border: 0;
+          background: transparent;
+          font: inherit;
+          font-weight: 600;
+          color: var(--ink);
+          text-align: start;
+          text-decoration: underline;
+          text-underline-offset: 0.18em;
+          text-decoration-thickness: 1px;
+          cursor: pointer;
+        }
+
+        .cvx-contact-portfolio:hover { opacity: 0.65; }
+
         .cvx-btn:hover { opacity: 0.6; }
         .cvx-btn:active { transform: scale(0.97); opacity: 0.6; transition: none; }
 
@@ -2504,6 +2555,21 @@ const ContactPage = () => {
           aspect-ratio: 16 / 10;
           object-fit: cover;
           background: #000;
+        }
+
+        .cvx-site-pop-live {
+          inline-size: 100%;
+          aspect-ratio: 16 / 10;
+          overflow: hidden;
+          background: #111;
+          pointer-events: none;
+        }
+
+        .cvx-site-pop-live iframe {
+          inline-size: 1280px;
+          block-size: 800px;
+          border: 0;
+          transform-origin: 0 0;
         }
 
         .cvx-site-pop-bar {
@@ -2716,41 +2782,31 @@ const ContactPage = () => {
               </a>
             </div>
             ))}
-            {(info.socials?.linkedin || portfolioUrl) && (
+            {info.socials?.website && (
               <div
                 style={{
-                  display: 'flex',
+                  display: 'grid',
+                  gridTemplateColumns: '4rem minmax(0, 1fr)',
                   gap: 'var(--s2)',
+                  alignItems: 'baseline',
                   padding: '0.7rem 0',
                   borderTop: '1px solid var(--rule)',
-                  color: 'var(--ink-2)',
                 }}
               >
-                {info.socials?.linkedin && (
-                  <a
-                    href={info.socials.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'inherit', textDecoration: 'none' }}
-                    onClick={() => trackOutboundClick('linkedin', info.socials!.linkedin!)}
-                  >
-                    LinkedIn
-                  </a>
-                )}
-                {info.socials?.linkedin && portfolioUrl && (
-                  <i className="cvx-dot cvx-dot--sep" style={{ alignSelf: 'center' }} aria-hidden />
-                )}
-                {portfolioUrl && (
-                  <button
-                    type="button"
-                    className="cvx-inline-btn"
-                    onClick={openTvcf}
-                    aria-haspopup="dialog"
-                    aria-expanded={tvcfOpen}
-                  >
-                    TVCF-Site
-                  </button>
-                )}
+                <span style={{ color: 'var(--ink-3)' }}>TVCF</span>
+                <ContactSiteLink
+                  className="cvx-contact-portfolio"
+                  site={{
+                    url: info.socials.website,
+                    label: 'TVCF',
+                    kicker: 'TVCF',
+                    livePreview: true,
+                  }}
+                  title="HUUUUU.N 포트폴리오"
+                >
+                  포트폴리오
+                  <span aria-hidden> ↗</span>
+                </ContactSiteLink>
               </div>
             )}
           </div>
@@ -2827,7 +2883,7 @@ const ContactPage = () => {
       <div className="contact-print-area contact-print-only px-8 py-8">
         <header className="contact-print-header">
           <h1 className="contact-print-name">이성훈</h1>
-          <p className="contact-print-role">Creative Director / Media Artist</p>
+          <p className="contact-print-role">Creative Director</p>
           <p className="contact-print-doc">Curriculum Vitae</p>
                 </header>
         {CV_NAV.map(({ id }) => (
