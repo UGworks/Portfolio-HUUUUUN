@@ -64,7 +64,7 @@ const desktopIntroTransition = (delay: number, duration: number, scale: number) 
 });
 
 const introCareers = [
-  { label: '사모펀드&IR컨설팅', role: '크리에이티브 디렉터', period: '2023~現' },
+  { label: '사모펀드&IR컨설팅', role: '크리에이티브 총괄', period: '2023~現' },
   { label: 'Web UI/UX & 마케팅회사', role: '영상팀장', period: '2020~2023' },
   { label: '포스트프로덕션', role: '2D TD', period: '2012~2019' },
 ];

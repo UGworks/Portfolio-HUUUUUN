@@ -125,7 +125,7 @@ type ExperienceEntry = {
 const experience: ExperienceEntry[] = [
     {
       company: '리브라텀 파트너스',
-      role: '크리에이티브 디렉터',
+      role: '크리에이티브 총괄',
       period: '2025.03 – 현재',
     site: SITE.libratum,
       items: [
@@ -481,7 +481,7 @@ function renderSectionBody(id: CvSectionId): ReactNode {
 
         <header className="cvd-id contact-screen-only">
           <h1>이성훈</h1>
-          <p>Creative Director</p>
+          <p>Creative Lead</p>
         </header>
 
         <section className="cvd-block">
@@ -2883,7 +2883,7 @@ const ContactPage = () => {
       <div className="contact-print-area contact-print-only px-8 py-8">
         <header className="contact-print-header">
           <h1 className="contact-print-name">이성훈</h1>
-          <p className="contact-print-role">Creative Director</p>
+          <p className="contact-print-role">Creative Lead</p>
           <p className="contact-print-doc">Curriculum Vitae</p>
                 </header>
         {CV_NAV.map(({ id }) => (
