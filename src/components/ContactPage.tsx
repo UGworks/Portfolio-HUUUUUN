@@ -139,7 +139,7 @@ const experience: ExperienceEntry[] = [
     },
     {
       company: '오픈익스체인지',
-      role: '아트 디렉터',
+      role: '시각디자인 총괄 (팀장)',
       period: '2023.09 – 2025.02',
     site: SITE.openexc,
       items: [
