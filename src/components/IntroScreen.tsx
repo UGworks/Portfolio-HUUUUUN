@@ -64,20 +64,20 @@ const desktopIntroTransition = (delay: number, duration: number, scale: number) 
 });
 
 const introCareers = [
-  { label: '사모펀드&IR컨설팅', role: '크리에이티브 총괄', period: '2023~現' },
+  { label: '사모펀드&IR컨설팅', role: '시각디자인 총괄', period: '2023~現' },
   { label: 'Web UI/UX & 마케팅회사', role: '영상팀장', period: '2020~2023' },
-  { label: '포스트프로덕션', role: '2D TD', period: '2012~2019' },
+  { label: '포스트프로덕션', role: '2D TD · 2D 팀장', period: '2012~2019' },
 ];
 
 const introKeywordLines = [
   '다양한 프로젝트 경험 · TVCF, VIRAL, M/V',
   '긍정적 사고 · 원활한 커뮤니케이션 · 노력형',
   '내 친구는 ADOBE · 책임감 · 일에 대한 열정',
-  '나름 젊은 나이 · 약간의 드로잉 · 취미는 사진',
-  '대기권까지 열린사고 · 빠른 손 · 체력이 국력',
-  '영상 디자인이 체질 · 힘세고 오래가는 정신력',
-  'MBTI-ENTP · 다재다능 · 성장하는 사람',
-  'AFTER EFFECT · FLAME · CINEMA 4D',
+  '영상·시각디자인 총괄 · 팀 리딩 · 외주 관리',
+  '키 비주얼 · 인포그래픽 · 웹 랜딩페이지',
+  'Clio · NYF · ADFEST 수상작 · TVCF 60편+',
+  '생성형 AI · ComfyUI · 바이브코딩',
+  'AFTER EFFECTS · FLAME · CINEMA 4D',
   'IR활동지원 · 라이브이벤트 · DAVINCI RESOLVE',
 ];
 
