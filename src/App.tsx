@@ -33,7 +33,7 @@ const PRESENTATION_BOOKMARKS: Record<string, string> = {
 const getInitialSection = (): AppSection => {
   const hash = window.location.hash.replace('#', '');
   if (hash === 'contact') return 'contact';
-  if (hash === 'about') return 'about';
+  if (hash === 'about') return 'contact'; // About(템플릿) 페이지는 노출하지 않고 CV로 연결
   return 'works';
 };
 
