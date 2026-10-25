@@ -73,7 +73,7 @@ const SITE = {
 } satisfies Record<string, SitePreview>;
 
 const PHONE = '010-2629-7954';
-const EMAIL = 'huuuun@kakao.com';
+const EMAIL = 'huuuuun@kakao.com';
 /** 엔딩 화면 등 다른 곳에서도 같은 연락처를 쓴다 */
 export const CONTACT = { phone: PHONE, email: EMAIL } as const;
 
@@ -107,9 +107,11 @@ const EDUCATION: { school: string; program: string; date: string; gpa?: string }
 ];
 
 const PROFILE =
-  '**13년 차** 시각 디자인·영상 전문가로, TVCF, 모션그래픽, 브랜드 필름, 라이브, 웹 콘텐츠까지 영상\u00A0제작 전반을 맡아 왔습니다.\n\n기획부터 촬영 대응, 합성·모션, 납품 포맷까지 한 흐름으로 이해하고, 그 과정을 **반복 가능한 워크플로우**로 만드는 데 강점이 있습니다.';
+  '**13년 차 영상·시각디자인 리드**입니다. TVCF 모션그래픽부터 기업 IR 비주얼까지 직접 만들고, 팀장으로 총괄해\u00A0왔습니다.\n\n복잡한 금융·기업 정보를 한눈에 읽히는 **영상, 인포그래픽, 웹 화면**으로 정리하고, 그 과정을 **생성형 AI 기반의 반복 가능한 워크플로우**로 만드는 데 강점이 있습니다.';
 
 const ROLE_FIT = [
+  '**시각디자인 총괄**: IR 행사 키 비주얼, 웹 랜딩페이지, 발표 템플릿, 인포그래픽·피치덱, 현장 사인물까지 온·오프라인 비주얼 일관성을\u00A0관리합니다.',
+  '**팀 리딩**: 사내 최초 영상팀을 신설해 3년 7개월간 이끌었고, 외주 물량을 100% 내재화해 외주 제작비를 약 40%\u00A0줄였습니다.',
   '**포스트프로덕션 2D TD**로 아트팀과 2D팀을 함께 리딩하며, 광고주, 대행사, 사내 편집팀, 외부\u00A0필름\u00A0프로덕션과 조율했습니다.',
   '**TVCF 영상 후반**, 웹 에이전시 UI/UX 영상 콘텐츠, **라이브 이벤트**까지 포맷마다 다른 제작\u00A0문제를 풀어 왔습니다.',
 ];
@@ -125,11 +127,12 @@ type ExperienceEntry = {
 const experience: ExperienceEntry[] = [
     {
       company: '리브라텀 파트너스',
-      role: '크리에이티브 총괄',
-      period: '2025.03 – 현재',
+      role: '시각디자인 총괄 (팀장)',
+      period: '2025.08 – 현재',
     site: SITE.libratum,
       items: [
       '사모펀드(PEF) 투자 지표와 글로벌 IR 데이터를 인포그래픽, 피치덱, 웹 UI로 설계하는 **시각\u00A0시스템 통합 운영**',
+      '하나금융지주 실적발표·GSC 데모데이·LSEG/HKEX 세미나 등 IR 이벤트의 **키 비주얼·현장 사인물·방송 화면 디자인 총괄** (하나금융지주는 입사 전 2025.04부터 프리랜서로 수행)',
       '데이터 기반 시각 구조 표준화와 투자자 커뮤니케이션 영상의 **구조 재설계**',
       '생성형 AI(t2v, i2v)와 바이브코딩 기반 웹 랜딩페이지 설계를 워크플로우에 도입하여 **제작\u00A0리드타임 40% 이상 단축**',
       ],
@@ -137,39 +140,41 @@ const experience: ExperienceEntry[] = [
     {
       company: '오픈익스체인지',
       role: '아트 디렉터',
-      period: '2023.09 – 2025.01',
+      period: '2023.09 – 2025.02',
     site: SITE.openexc,
       items: [
-      '삼성전자 인베스터데이, 네이버, 크래프톤, 휠라, 하나금융지주 **랜딩페이지·홀딩슬라이드 제작, 라이브 현장 총괄**',
+      '삼성전자 인베스터데이, 네이버, 크래프톤, 휠라, 하나금융지주 등 상장사 7곳 **랜딩페이지·홀딩슬라이드 제작, 라이브 현장 총괄**',
       '**포스코홀딩스IR 채널 운영**, 템플릿 제작 및 외주 관리',
       ],
     },
     {
       company: '콘센트릭스 카탈리스트',
-      role: '모션 콘텐츠 팀 리더',
+      role: '영상팀 팀장',
       period: '2020.02 – 2023.08',
     site: SITE.concentrix,
       items: [
         '글로벌 IT/가전 기업의 **USP 영상 및 B2C 콘텐츠 기획·제작**',
       '인하우스 영상 프로덕션 팀 신설과 디자인 팀 매니징으로 **외주 제작비 연 40% 절감** 및 내부\u00A0수익화 전환',
-      '다국적 프로젝트의 품질 일관성을 유지하고 69개국 웹사이트용 webm/mp4/JSON 영상\u00A0소재 **제작\u00A0총괄**',
+      'LG.COM 글로벌 69개국 리뉴얼(23억 원 규모) 웹사이트용 webm/mp4/JSON 영상\u00A0소재 **제작\u00A0총괄**',
+      '삼성 CPC 캠페인(12억 원 규모) 교육 영상, Galaxy Z Flip4·Fold4 케이스 공개 영상(삼성 공식 채널 약\u00A068만·69만 뷰)',
       ],
     },
     {
       company: '키스톤 플레이',
-      role: '2D 테크니컬 디렉터',
+      role: '2D 테크니컬 디렉터 (2D 팀장)',
       period: '2015.09 – 2019.11',
     site: SITE.keystone,
       items: [
+      'LG SIGNATURE \'Art of Essence\' 글로벌 캠페인 **60여 개국 버전·타임스퀘어/피카딜리 OOH** 2D 합성, 한화 \'솔라보트 클린업 메콩\'(Clio·NYF·ADFEST 수상작)',
       '포스트 프로덕션 단계 **2D 시각 효과 및 합성** 솔루션\u00A0제공',
       '**TVCF, 뮤직비디오, 공익광고** 등 영상 프로젝트 테크니컬 디렉팅',
       '클라이언트 요구사항 기반 **촬영 현장 감독** 및 포스트 파이프라인 설계',
       ],
     },
     {
-      company: '포스트포엠',
-      role: '선임 2D 아티스트',
-      period: '2014.10 – 2015.09',
+      company: '더포스트포엠',
+      role: '2D 아티스트 (대리)',
+      period: '2014.11 – 2015.08',
       items: [
         '대규모 미디어 캠페인용 **고해상도 영상 소스** 제작 및 브랜드 모션 그래픽\u00A0연출',
         '광고 영상 합성 작업의 **품질 기준 수립** 및 주니어 아티스트 업무\u00A0조율',
@@ -177,9 +182,9 @@ const experience: ExperienceEntry[] = [
       ],
     },
     {
-      company: '빅슨 스튜디오',
+      company: '빅슨커뮤니케이션 (VIXEN VFX Studio)',
       role: '2D 아티스트',
-      period: '2012.07 – 2014.10',
+      period: '2012.08 – 2014.11',
     site: SITE.vixen,
       items: [
         '매트 페인팅 및 이미지 합성을 통한 **TV 광고 공간 연출** 및 후반 작업',
@@ -194,7 +199,8 @@ const certifications = [
   { name: '컬러리스트기사', year: '2025' },
   { name: '컬러리스트산업기사', year: '2025' },
   { name: '멀티미디어콘텐츠제작전문가', year: '2025' },
-  { name: `ICA DaVinci${'\u00A0'}Resolve 201`, year: '2024' },
+  { name: 'GTQ(그래픽기술자격) 1급', year: '2025' },
+  { name: `ICA Color Technology 201 / DaVinci${'\u00A0'}Resolve 201`, year: '2024' },
 ];
 
 const skillRows = [
@@ -481,7 +487,7 @@ function renderSectionBody(id: CvSectionId): ReactNode {
 
         <header className="cvd-id contact-screen-only">
           <h1>이성훈</h1>
-          <p>Creative Lead</p>
+          <p>영상·시각디자인 리드</p>
         </header>
 
         <section className="cvd-block">
@@ -2883,7 +2889,7 @@ const ContactPage = () => {
       <div className="contact-print-area contact-print-only px-8 py-8">
         <header className="contact-print-header">
           <h1 className="contact-print-name">이성훈</h1>
-          <p className="contact-print-role">Creative Lead</p>
+          <p className="contact-print-role">영상·시각디자인 리드</p>
           <p className="contact-print-doc">Curriculum Vitae</p>
                 </header>
         {CV_NAV.map(({ id }) => (
